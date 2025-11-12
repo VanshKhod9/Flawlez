@@ -1,0 +1,231 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
+/* Global styles */
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f7f1e9;
+  margin: 0;
+  padding: 0;
+  color: #222;
+}
+
+/* ---------------- Navbar ---------------- */
+.navbar-container {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: #f7f1e9; /* soft beige background */
+  border-bottom: 1px solid #e0dbd2;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Logo Centered */
+.navbar-logo {
+  text-align: center;
+  line-height: 1.1;
+}
+
+.navbar-logo h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #222;
+  margin: 0;
+}
+
+.navbar-logo p {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 4px;
+  color: #333;
+  margin: 0;
+}
+
+/* Right-side icons */
+.navbar-icons {
+  position: absolute;
+  right: 40px;
+  display: flex;
+  gap: 20px;
+}
+
+.icon {
+  font-size: 18px;
+  color: #222;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.icon:hover {
+  color: #6b4f3f; /* coffee tone hover */
+}
+
+.Login-logo {
+  width: 120px;
+  height: auto;
+}
+
+.logoo {
+  width: 35px;
+  height: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.logoo:hover {
+  transform: scale(1.1);
+}
+
+/* ---------------- Body ---------------- */
+.body-container {
+  padding: 60px 80px;
+  background-color: #f7f1e9;
+}
+
+/* Header section */
+.products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.products-header h2 {
+  font-size: 32px;
+  letter-spacing: 2px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.filters-sort {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1px solid #222;
+  padding: 6px 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.filter-btn img {
+  width: 15px;
+}
+
+.sort-text {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #444;
+}
+
+/* Product count */
+.product-count {
+  font-weight: 500;
+  margin: 40px 0 20px;
+}
+
+/* ---------------- Product Grid ---------------- */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 40px;
+}
+
+.product-card {
+  background-color: #F7F3ED;
+  padding: 20px;
+  border-radius: 6px;
+  text-align: left;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
+.product-img {
+  position: relative;
+  background-color: #F7F3ED;
+  text-align: center;
+  padding: 60px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-img img {
+  width: 85%;
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
+}
+
+.product-tag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #acc8e5;
+  color: #000;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.product-card h3 {
+  font-weight: 600;
+  margin: 15px 0 5px;
+  letter-spacing: 0.5px;
+}
+
+.product-desc {
+  color: #555;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.product-price {
+  font-weight: 600;
+  color: #000;
+}
+.add-btn {
+  margin-top: 10px;
+  background-color: #7c4731;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.add-btn:hover {
+  background-color: #4f3323;
+}
+
+.cart-icon-wrapper {
+  position: relative;
+}
+
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background-color: #6b4f3f;
+  color: white;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 50%;
+}

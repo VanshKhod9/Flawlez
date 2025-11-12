@@ -1,0 +1,84 @@
+/* Login Page Styles */
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  background-color: #F7F3ED;
+  font-family: "Poppins", sans-serif;
+}
+
+.login-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+.login-title {
+  font-size: 26px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 300px;
+  /* background: white; */
+  /* padding: 25px; */
+  /* border-radius: 10px; */
+  /* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */
+}
+
+.login-input {
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  background-color: #fff;
+}
+
+.login-input:focus {
+  border-color: #007bff;
+}
+
+.login-button {
+  background-color: #7B6349;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 10px;
+}
+
+.login-button:hover {
+  background-color: #7B6349;
+}
+
+.login-message {
+  margin-top: 15px;
+  color: #000000;
+  font-size: 14px;
+}
+
+.login-link {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #000000;
+}
+
+.login-signup-link {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.login-signup-link:hover {
+  text-decoration: underline;
+}

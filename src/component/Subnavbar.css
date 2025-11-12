@@ -1,0 +1,31 @@
+.subnavbar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+  background-color: #7c4731;
+  border-bottom: 1px solid #e0dbd2;
+  padding: 15px 0;
+  font-family: "Poppins", sans-serif;
+  position: relative;
+}
+
+.subnav-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.1s ease;
+}
+
+.subnav-btn:hover {
+  color: #6b4f3f; /* coffee brown tone */
+  transform: translateY(-2px);
+}
+
+.subnav-btn:active {
+  transform: translateY(1px);
+}
