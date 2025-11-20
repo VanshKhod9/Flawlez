@@ -48,19 +48,23 @@ app.post("/api/register", async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password required" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     await db.execute("INSERT INTO users (username, password) VALUES ($1, $2)", [
       username,
       hashedPassword,
     ]);
 
-    res.json({ message: "User registered successfully" });
+    res.json({ message: "User registered successfully", success: true });
   } catch (error) {
+    console.error("Register error:", error.message, error.code);
     if (error.code === "23505") { // PostgreSQL unique constraint violation
-      res.json({ message: "Username already exists" });
+      res.json({ message: "Username already exists", success: false });
     } else {
-      console.error(error);
-      res.status(500).json({ message: "Server error" });
+      res.status(500).json({ message: "Server error: " + error.message, success: false });
     }
   }
 });
