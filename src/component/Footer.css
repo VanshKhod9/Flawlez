@@ -7,13 +7,16 @@
   margin-top: 80px;
   border-top: 2px solid rgba(123, 99, 73, 0.15);
   font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
 }
 
 .footer-container {
   width: 100%;
-  max-width: 1400px;
+  max-width: 1200px; /* slightly narrower for centered layout */
   margin: 0 auto;
   padding: 0 20px;
+  box-sizing: border-box;
 }
 
 .footer-brand {
@@ -34,6 +37,13 @@
   gap: 40px;
   margin-bottom: 50px;
   align-items: start;
+}
+
+/* ensure the inner grid doesn't stretch beyond the container and stays centered */
+.footer-grid {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 50px auto;
 }
 
 .footer-column {
