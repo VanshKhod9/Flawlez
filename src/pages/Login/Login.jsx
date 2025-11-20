@@ -24,16 +24,28 @@ export default function Login() {
 
       if (res.accessToken) {
         localStorage.setItem("token", res.accessToken);
-        setIsLoggedIn(true); // Update cart context
+        console.log("✅ Login successful, token stored:", res.accessToken.substring(0, 20) + "...");
         
-        // Give a small delay to allow state to update before syncing
-        setTimeout(() => {
-          syncCartFromServer();
-        }, 100);
+        // Set login state - this will trigger cart loading
+        setIsLoggedIn(true);
         
-        console.log("✅ Login successful, token stored.");
+        // Also manually trigger cart sync to be sure
+        setTimeout(async () => {
+          try {
+            console.log("🔄 Manually syncing cart after login...");
+            await syncCartFromServer();
+            console.log("✅ Cart synced manually");
+          } catch (error) {
+            console.error("❌ Manual cart sync error:", error);
+          }
+        }, 300);
+        
         setMessage("Login successful!");
-        setTimeout(() => navigate("/home"), 1000);
+        
+        // Give cart time to load before navigating
+        setTimeout(() => {
+          navigate("/home");
+        }, 1000);
       } else {
         setMessage(res.message || "Invalid username or password.");
       }

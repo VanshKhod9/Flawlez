@@ -35,6 +35,18 @@ export async function saveCart(token, cart) {
     },
     body: JSON.stringify({ cart }),
   });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText || res.statusText };
+    }
+    throw new Error(errorData.message || `Failed to save cart: ${res.status}`);
+  }
+  
   return res.json();
 }
 
@@ -42,6 +54,18 @@ export async function getCart(token) {
   const res = await fetch(`${API_URL}/cart`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  
+  if (!res.ok) {
+    const errorText = await res.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText || res.statusText };
+    }
+    throw new Error(errorData.message || `Failed to get cart: ${res.status}`);
+  }
+  
   return res.json();
 }
 
@@ -147,6 +171,26 @@ export async function changePassword(token, data) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
+  });
+  return handleJsonResponse(res);
+}
+
+// Email subscription API functions
+export async function getSubscriptionStatus(token) {
+  const res = await fetch(`${API_URL}/subscription/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleJsonResponse(res);
+}
+
+export async function subscribeEmail(token, email) {
+  const res = await fetch(`${API_URL}/subscription`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ email }),
   });
   return handleJsonResponse(res);
 }

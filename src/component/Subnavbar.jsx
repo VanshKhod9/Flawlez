@@ -7,14 +7,19 @@ export default function SubNavbar() {
 
   return (
     <div className="subnavbar-container">
-      <button className="subnav-btn" onClick={() => navigate("/home")}>
-        Shop
-      </button>
-      <button className="subnav-btn" onClick={() => navigate("/bulk-order")}>
-        Bulk Order
-      </button>
-      <button className="subnav-btn" onClick={() => navigate("/story")}>
-        Story
+      <div className="subnav-center-group">
+        <button className="subnav-btn" onClick={() => navigate("/home")}>
+          Shop
+        </button>
+        <button className="subnav-btn" onClick={() => navigate("/bulk-order")}>
+          Bulk Order
+        </button>
+        <button className="subnav-btn" onClick={() => navigate("/story")}>
+          Story
+        </button>
+      </div>
+      <button className="subnav-btn subnav-btn-right" onClick={() => navigate("/quiz")}>
+        Quiz
       </button>
     </div>
   );

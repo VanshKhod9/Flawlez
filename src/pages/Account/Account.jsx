@@ -68,27 +68,28 @@ export default function Account() {
     confirmPassword: "",
   });
 
-  // ✅ Always read the latest token from localStorage
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  // ✅ Fetch account details — only once on mount
   useEffect(() => {
-    const handleStorage = () => setToken(localStorage.getItem("token"));
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
-  // ✅ Fetch account details — stays logged in until manual logout
-  useEffect(() => {
+    let isMounted = true;
+    
     const fetchAccount = async () => {
       const activeToken = localStorage.getItem("token");
       if (!activeToken) {
-        setError("Please login again.");
-        setLoading(false);
+        if (isMounted) {
+          setError("Please login again.");
+          setLoading(false);
+        }
+        navigate("/login");
         return;
       }
 
       try {
-        setLoading(true);
+        if (isMounted) {
+          setLoading(true);
+        }
         const data = await getAccount(activeToken);
+
+        if (!isMounted) return;
 
         // If backend says token invalid — only then logout
         if (data.message?.toLowerCase().includes("invalid token")) {
@@ -105,15 +106,31 @@ export default function Account() {
         });
         setError("");
       } catch (err) {
+        if (!isMounted) return;
+        
         console.error("Account fetch error", err);
+        // If token is invalid, redirect to login
+        if (err.status === 401 || err.message?.includes("token") || err.message?.includes("expired") || err.message?.includes("Invalid")) {
+          localStorage.removeItem("token");
+          logout();
+          navigate("/login");
+          return;
+        }
         setError(err.message || "Unable to load account information.");
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAccount();
-  }, [token, navigate, logout]);
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // ✅ Address handling
   const resetAddressForm = () => {

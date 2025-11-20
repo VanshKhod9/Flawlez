@@ -1,7 +1,57 @@
-import React from "react";
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "../context/Cartcontext";
+import { subscribeEmail } from "../api";
 import "./Footer.css";
 
 export default function Footer() {
+  const { isLoggedIn } = useContext(CartContext);
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subscribeMessage, setSubscribeMessage] = useState("");
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    
+    if (!email || !email.includes("@")) {
+      setSubscribeMessage("Please enter a valid email address");
+      return;
+    }
+
+    if (!isLoggedIn) {
+      setSubscribeMessage("Please login to subscribe");
+      navigate("/login");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubscribeMessage("");
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setSubscribeMessage("Please login to subscribe");
+        navigate("/login");
+        return;
+      }
+
+      const response = await subscribeEmail(token, email);
+      
+      if (response.success) {
+        setSubscribeMessage("Successfully subscribed! Thank you.");
+        setEmail("");
+      } else {
+        setSubscribeMessage(response.message || "Failed to subscribe. Please try again.");
+      }
+    } catch (error) {
+      console.error("Subscription error:", error);
+      setSubscribeMessage(error.message || "Failed to subscribe. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="site-footer">
       <div className="footer-container">
@@ -10,14 +60,28 @@ export default function Footer() {
         </div>
 
         <div className="footer-grid">
-          {/* <div className="footer-column">
-            <h4>Be the first to know!</h4>
+          <div className="footer-column footer-subscribe">
+            <h5>Be the first to know!</h5>
             <p>Subscribers get early access to new releases, seasonal coffees, and special offers.</p>
-            <form className="footer-form" onSubmit={(e) => e.preventDefault()}>
-              <input type="email" placeholder="Enter your email" aria-label="Email" required />
-              <button type="submit">Subscribe</button>
+            <form className="footer-form" onSubmit={handleSubscribe}>
+              <input 
+                type="email" 
+                placeholder="Enter your email" 
+                aria-label="Email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
+              <button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Subscribing..." : "Subscribe"}
+              </button>
             </form>
-          </div> */}
+            {subscribeMessage && (
+              <p className={`footer-message ${subscribeMessage.includes("Success") ? "success" : "error"}`}>
+                {subscribeMessage}
+              </p>
+            )}
+          </div>
 
           <div className="footer-column">
             <h5>Contact Us</h5>

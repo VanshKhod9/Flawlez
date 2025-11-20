@@ -20,8 +20,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Wrapper for easier syntax compatibility
+// Get a connection from the pool
 const db = {
+  query: async (sql, values) => {
+    return pool.query(sql, values);
+  },
   execute: async (sql, values) => {
     const result = await pool.query(sql, values);
     return [result.rows, result];
@@ -29,6 +32,7 @@ const db = {
 };
 
 console.log("✅ Connected to PostgreSQL Database");
+
 
 const razorpay =
   process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET
@@ -49,14 +53,14 @@ app.post("/api/register", async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await db.execute("INSERT INTO users (username, password) VALUES ($1, $2)", [
+    await db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [
       username,
       hashedPassword,
     ]);
 
     res.json({ message: "User registered successfully" });
   } catch (error) {
-    if (error.code === "23505") { // PostgreSQL unique constraint violation
+    if (error.code === "ER_DUP_ENTRY") {
       res.json({ message: "Username already exists" });
     } else {
       console.error(error);
@@ -69,7 +73,7 @@ app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const [users] = await db.execute("SELECT * FROM users WHERE username = $1", [username]);
+    const [users] = await db.execute("SELECT * FROM users WHERE username = ?", [username]);
     if (users.length === 0) return res.json({ message: "User not found" });
 
     const user = users[0];
@@ -79,8 +83,9 @@ app.post("/api/login", async (req, res) => {
     const token = jwt.sign(
       { username: user.username },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" } // valid for 1 hour
     );
+
 
     res.json({
       accessToken: token,
@@ -91,6 +96,7 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 app.get("/api/protected", (req, res) => {
   const authHeader = req.headers["authorization"];
@@ -104,6 +110,7 @@ app.get("/api/protected", (req, res) => {
   });
 });
 
+
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -114,6 +121,7 @@ const verifyToken = (req, res, next) => {
 
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
+      // Return 401 for consistency with frontend error handling
       return res.status(401).json({ message: "Invalid or expired token. Please login again." });
     }
     req.user = decoded;
@@ -121,35 +129,27 @@ const verifyToken = (req, res, next) => {
   });
 };
 
+
 async function initializeTables() {
   try {
-    // Create users table if not exists
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
     // Create carts table
     await db.execute(`
       CREATE TABLE IF NOT EXISTS carts (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        cart_data JSONB NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        cart_data JSON NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_cart (username)
       )
     `);
 
     // Create orders table
     await db.execute(`
       CREATE TABLE IF NOT EXISTS orders (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(255) NOT NULL,
-        order_data JSONB NOT NULL,
-        shipping_address JSONB NOT NULL,
+        order_data JSON NOT NULL,
+        shipping_address JSON NOT NULL,
         total DECIMAL(10, 2) NOT NULL,
         payment_status VARCHAR(50) DEFAULT 'pending',
         payment_provider VARCHAR(50) DEFAULT 'manual',
@@ -162,7 +162,7 @@ async function initializeTables() {
     // Create addresses table
     await db.execute(`
       CREATE TABLE IF NOT EXISTS addresses (
-        id SERIAL PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(255) NOT NULL,
         label VARCHAR(100) DEFAULT 'Default',
         full_name VARCHAR(255) NOT NULL,
@@ -177,6 +177,34 @@ async function initializeTables() {
       )
     `);
 
+    // Create email_subscriptions table
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS email_subscriptions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_subscription (username)
+      )
+    `);
+    console.log("✅ Email subscriptions table initialized");
+
+    const alterStatements = [
+      "ALTER TABLE orders ADD COLUMN payment_provider VARCHAR(50) DEFAULT 'manual' AFTER payment_status",
+      "ALTER TABLE orders ADD COLUMN provider_order_id VARCHAR(255) DEFAULT NULL AFTER payment_provider",
+      "ALTER TABLE orders ADD COLUMN provider_payment_id VARCHAR(255) DEFAULT NULL AFTER provider_order_id",
+    ];
+
+    for (const statement of alterStatements) {
+      try {
+        await db.execute(statement);
+      } catch (error) {
+        if (error.code !== "ER_DUP_FIELDNAME") {
+          console.error("Error ensuring orders table columns:", error.message || error);
+        }
+      }
+    }
+
     console.log("✅ Database tables initialized");
   } catch (error) {
     console.error("Error initializing tables:", error);
@@ -190,31 +218,113 @@ app.post("/api/cart", verifyToken, async (req, res) => {
     const { cart } = req.body;
     const username = req.user.username;
 
+    // Ensure cart is an array
+    const cartArray = Array.isArray(cart) ? cart : [];
+    
+    console.log(`💾 Saving cart for user: ${username}, items: ${cartArray.length}`);
+
     await db.execute(
-      "INSERT INTO carts (username, cart_data) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET cart_data = $2, updated_at = CURRENT_TIMESTAMP",
-      [username, JSON.stringify(cart)]
+      "INSERT INTO carts (username, cart_data) VALUES (?, ?) ON DUPLICATE KEY UPDATE cart_data = ?, updated_at = CURRENT_TIMESTAMP",
+      [username, JSON.stringify(cartArray), JSON.stringify(cartArray)]
     );
 
+    console.log(`✅ Cart saved successfully for user: ${username}`);
     res.json({ message: "Cart saved successfully" });
   } catch (error) {
-    console.error("Error saving cart:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Error saving cart:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 app.get("/api/cart", verifyToken, async (req, res) => {
   try {
     const username = req.user.username;
-    const [rows] = await db.execute("SELECT cart_data FROM carts WHERE username = $1", [username]);
+    console.log(`🔄 Loading cart for user: ${username}`);
+    
+    const [rows] = await db.execute("SELECT cart_data FROM carts WHERE username = ?", [username]);
 
     if (rows.length === 0) {
+      console.log(`ℹ️ No cart found for user: ${username}`);
       return res.json({ cart: [] });
     }
 
-    const cart = JSON.parse(rows[0].cart_data);
+    let cartData = rows[0].cart_data;
+    
+    // Handle different data types from MySQL
+    // MySQL JSON columns might return as object, string, or Buffer
+    if (cartData === null || cartData === undefined) {
+      console.log(`ℹ️ Cart data is null for user: ${username}`);
+      return res.json({ cart: [] });
+    }
+
+    // If it's already an object/array, use it directly
+    if (typeof cartData === 'object' && !Buffer.isBuffer(cartData)) {
+      // Already parsed JSON object
+      if (Array.isArray(cartData)) {
+        console.log(`✅ Cart loaded for user: ${username}, items: ${cartData.length}`);
+        return res.json({ cart: cartData });
+      } else {
+        // Not an array, reset it
+        console.warn(`⚠️ Cart is not an array for user: ${username}, resetting`);
+        await db.execute(
+          "UPDATE carts SET cart_data = ? WHERE username = ?",
+          [JSON.stringify([]), username]
+        );
+        return res.json({ cart: [] });
+      }
+    }
+
+    // Convert Buffer to string if needed
+    if (Buffer.isBuffer(cartData)) {
+      cartData = cartData.toString('utf8');
+    }
+
+    // Ensure it's a string before calling string methods
+    if (typeof cartData !== 'string') {
+      console.warn(`⚠️ Cart data is unexpected type: ${typeof cartData} for user: ${username}, resetting`);
+      await db.execute(
+        "UPDATE carts SET cart_data = ? WHERE username = ?",
+        [JSON.stringify([]), username]
+      );
+      return res.json({ cart: [] });
+    }
+
+    // Handle empty or invalid JSON string
+    const trimmedData = cartData.trim();
+    if (trimmedData === '' || trimmedData === 'null' || trimmedData === 'undefined') {
+      console.log(`ℹ️ Cart data is empty for user: ${username}`);
+      return res.json({ cart: [] });
+    }
+
+    let cart;
+    try {
+      cart = JSON.parse(trimmedData);
+    } catch (parseError) {
+      console.error(`❌ Invalid JSON in cart_data for user: ${username}`, parseError);
+      console.log(`Raw cart_data type: ${typeof cartData}, value:`, cartData);
+      // Clear invalid cart data and return empty cart
+      await db.execute(
+        "UPDATE carts SET cart_data = ? WHERE username = ?",
+        [JSON.stringify([]), username]
+      );
+      return res.json({ cart: [] });
+    }
+
+    // Ensure cart is an array
+    if (!Array.isArray(cart)) {
+      console.warn(`⚠️ Cart is not an array for user: ${username}, resetting to empty array`);
+      await db.execute(
+        "UPDATE carts SET cart_data = ? WHERE username = ?",
+        [JSON.stringify([]), username]
+      );
+      return res.json({ cart: [] });
+    }
+
+    console.log(`✅ Cart loaded for user: ${username}, items: ${cart.length}`);
     res.json({ cart });
   } catch (error) {
-    console.error("Error getting cart:", error);
+    console.error("❌ Error getting cart:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -229,6 +339,7 @@ const parsePrice = (value) => {
   }
   return 0;
 };
+
 
 app.post("/api/checkout", verifyToken, async (req, res) => {
   try {
@@ -258,7 +369,7 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
     const initialStatus = razorpay ? "pending_payment" : "completed";
 
     const [result] = await db.execute(
-      "INSERT INTO orders (username, order_data, shipping_address, total, payment_status, payment_provider) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+      "INSERT INTO orders (username, order_data, shipping_address, total, payment_status, payment_provider) VALUES (?, ?, ?, ?, ?, ?)",
       [
         username,
         JSON.stringify(sanitizedCart),
@@ -269,10 +380,10 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
       ]
     );
 
-    const orderId = result[0].id;
+    const orderId = result.insertId;
 
     if (!razorpay) {
-      await db.execute("DELETE FROM carts WHERE username = $1", [username]);
+      await db.execute("DELETE FROM carts WHERE username = ?", [username]);
       return res.json({
         success: true,
         mode: "simulation",
@@ -294,7 +405,7 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
       },
     });
 
-    await db.execute("UPDATE orders SET provider_order_id = $1 WHERE id = $2", [
+    await db.execute("UPDATE orders SET provider_order_id = ? WHERE id = ?", [
       razorpayOrder.id,
       orderId,
     ]);
@@ -313,6 +424,7 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
   }
 });
 
+
 app.post("/api/verify-payment", verifyToken, async (req, res) => {
   if (!razorpay) {
     return res.status(400).json({
@@ -330,7 +442,7 @@ app.post("/api/verify-payment", verifyToken, async (req, res) => {
     }
 
     const [orders] = await db.execute(
-      "SELECT * FROM orders WHERE id = $1 AND username = $2",
+      "SELECT * FROM orders WHERE id = ? AND username = ?",
       [orderId, username]
     );
 
@@ -351,18 +463,18 @@ app.post("/api/verify-payment", verifyToken, async (req, res) => {
 
     if (generatedSignature !== razorpay_signature) {
       await db.execute(
-        "UPDATE orders SET payment_status = $1, provider_payment_id = $2 WHERE id = $3",
+        "UPDATE orders SET payment_status = ?, provider_payment_id = ? WHERE id = ?",
         ["failed", razorpay_payment_id, orderId]
       );
       return res.status(400).json({ message: "Invalid payment signature", success: false });
     }
 
     await db.execute(
-      "UPDATE orders SET payment_status = $1, provider_payment_id = $2 WHERE id = $3",
+      "UPDATE orders SET payment_status = ?, provider_payment_id = ? WHERE id = ?",
       ["completed", razorpay_payment_id, orderId]
     );
 
-    await db.execute("DELETE FROM carts WHERE username = $1", [username]);
+    await db.execute("DELETE FROM carts WHERE username = ?", [username]);
 
     res.json({ success: true });
   } catch (error) {
@@ -417,17 +529,18 @@ const validateAddress = (address) => {
   return required.every((field) => address[field] && address[field].length > 0);
 };
 
+
 app.get("/api/account", verifyToken, async (req, res) => {
   try {
     const username = req.user.username;
 
     const [addresses] = await db.execute(
-      "SELECT id, label, full_name, line1, line2, city, state, postal_code, country, phone, created_at FROM addresses WHERE username = $1 ORDER BY created_at DESC",
+      "SELECT id, label, full_name, line1, line2, city, state, postal_code, country, phone, created_at FROM addresses WHERE username = ? ORDER BY created_at DESC",
       [username]
     );
 
     const [orders] = await db.execute(
-      "SELECT id, order_data, shipping_address, total, payment_status, payment_provider, provider_order_id, provider_payment_id, created_at FROM orders WHERE username = $1 ORDER BY created_at DESC",
+      "SELECT id, order_data, shipping_address, total, payment_status, payment_provider, provider_order_id, provider_payment_id, created_at FROM orders WHERE username = ? ORDER BY created_at DESC",
       [username]
     );
 
@@ -444,6 +557,7 @@ app.get("/api/account", verifyToken, async (req, res) => {
   }
 });
 
+
 app.post("/api/account/address", verifyToken, async (req, res) => {
   try {
     const username = req.user.username;
@@ -455,7 +569,7 @@ app.post("/api/account/address", verifyToken, async (req, res) => {
 
     const [result] = await db.execute(
       `INSERT INTO addresses (username, label, full_name, line1, line2, city, state, postal_code, country, phone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         username,
         address.label,
@@ -472,13 +586,14 @@ app.post("/api/account/address", verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      address: { id: result[0].id, ...address },
+      address: { id: result.insertId, ...address },
     });
   } catch (error) {
     console.error("Error adding address:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 app.put("/api/account/address/:id", verifyToken, async (req, res) => {
   try {
@@ -488,7 +603,7 @@ app.put("/api/account/address/:id", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid address id" });
     }
 
-    const [existing] = await db.execute("SELECT id FROM addresses WHERE id = $1 AND username = $2", [
+    const [existing] = await db.execute("SELECT id FROM addresses WHERE id = ? AND username = ?", [
       addressId,
       username,
     ]);
@@ -504,7 +619,7 @@ app.put("/api/account/address/:id", verifyToken, async (req, res) => {
     }
 
     await db.execute(
-      `UPDATE addresses SET label = $1, full_name = $2, line1 = $3, line2 = $4, city = $5, state = $6, postal_code = $7, country = $8, phone = $9 WHERE id = $10 AND username = $11`,
+      `UPDATE addresses SET label = ?, full_name = ?, line1 = ?, line2 = ?, city = ?, state = ?, postal_code = ?, country = ?, phone = ? WHERE id = ? AND username = ?`,
       [
         address.label,
         address.full_name,
@@ -527,6 +642,7 @@ app.put("/api/account/address/:id", verifyToken, async (req, res) => {
   }
 });
 
+
 app.delete("/api/account/address/:id", verifyToken, async (req, res) => {
   try {
     const username = req.user.username;
@@ -535,13 +651,14 @@ app.delete("/api/account/address/:id", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid address id" });
     }
 
-    await db.execute("DELETE FROM addresses WHERE id = $1 AND username = $2", [addressId, username]);
+    await db.execute("DELETE FROM addresses WHERE id = ? AND username = ?", [addressId, username]);
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting address:", error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 app.post("/api/account/password", verifyToken, async (req, res) => {
   try {
@@ -552,7 +669,7 @@ app.post("/api/account/password", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Missing password fields" });
     }
 
-    const [users] = await db.execute("SELECT password FROM users WHERE username = $1", [username]);
+    const [users] = await db.execute("SELECT password FROM users WHERE username = ?", [username]);
 
     if (users.length === 0) {
       return res.status(404).json({ message: "User not found" });
@@ -565,12 +682,77 @@ app.post("/api/account/password", verifyToken, async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await db.execute("UPDATE users SET password = $1 WHERE username = $2", [hashedPassword, username]);
+    await db.execute("UPDATE users SET password = ? WHERE username = ?", [hashedPassword, username]);
 
     res.json({ success: true, message: "Password updated" });
   } catch (error) {
     console.error("Error updating password:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+// Email subscription endpoints
+app.get("/api/subscription/status", verifyToken, async (req, res) => {
+  try {
+    const username = req.user.username;
+    console.log(`📧 Checking subscription status for user: ${username}`);
+    
+    const [subscriptions] = await db.execute(
+      "SELECT * FROM email_subscriptions WHERE username = ?",
+      [username]
+    );
+
+    if (subscriptions.length > 0) {
+      console.log(`✅ User ${username} is subscribed with email: ${subscriptions[0].email}`);
+      res.json({ subscribed: true, email: subscriptions[0].email, subscribedAt: subscriptions[0].subscribed_at });
+    } else {
+      console.log(`ℹ️ User ${username} is NOT subscribed`);
+      res.json({ subscribed: false });
+    }
+  } catch (error) {
+    console.error("❌ Error checking subscription status:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/subscription", verifyToken, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const { email } = req.body;
+
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+
+    // Check if already subscribed
+    const [existing] = await db.execute(
+      "SELECT * FROM email_subscriptions WHERE username = ?",
+      [username]
+    );
+
+    if (existing.length > 0) {
+      // Update email if different
+      await db.execute(
+        "UPDATE email_subscriptions SET email = ?, subscribed_at = CURRENT_TIMESTAMP WHERE username = ?",
+        [email, username]
+      );
+      res.json({ success: true, message: "Subscription updated" });
+    } else {
+      // Create new subscription
+      await db.execute(
+        "INSERT INTO email_subscriptions (username, email) VALUES (?, ?)",
+        [username, email]
+      );
+      res.json({ success: true, message: "Successfully subscribed" });
+    }
+  } catch (error) {
+    console.error("Error subscribing:", error);
+    if (error.code === "ER_DUP_ENTRY") {
+      res.status(400).json({ message: "Already subscribed" });
+    } else {
+      res.status(500).json({ message: "Server error" });
+    }
   }
 });
 
@@ -580,7 +762,7 @@ app.get("/api/checkout-success/:orderId", verifyToken, async (req, res) => {
     const username = req.user.username;
 
     const [orders] = await db.execute(
-      "SELECT * FROM orders WHERE id = $1 AND username = $2",
+      "SELECT * FROM orders WHERE id = ? AND username = ?",
       [orderId, username]
     );
 
@@ -594,6 +776,7 @@ app.get("/api/checkout-success/:orderId", verifyToken, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));

@@ -6,13 +6,16 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 import { CartProvider } from "./context/Cartcontext";
 import BulkOrder from "./pages/Bulk-order/bulk-order";
 import Story from "./pages/Story/story";
+import Quiz from "./pages/Quiz/Quiz";
 import Checkout from "./pages/Checkout/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess/CheckoutSuccess";
 import Account from "./pages/Account/Account";
+import EmailSubscriptionPopup from "./component/EmailSubscriptionPopup";
 
 function App() {
   return (
     <CartProvider>
+      <EmailSubscriptionPopup />
       <Router>
         <Routes>
           {/* Default route → go to home */}
@@ -25,6 +28,7 @@ function App() {
 
           <Route path="/bulk-order" element={<BulkOrder />} />
           <Route path="/story" element={<Story />} />
+          <Route path="/quiz" element={<Quiz />} />
           <Route
             path="/checkout"
             element={

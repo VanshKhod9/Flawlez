@@ -1,13 +1,27 @@
 .subnavbar-container {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #7c4731;
+  border-bottom: 1px solid #e0dbd2;
+  padding: 15px 20px;
+  font-family: "Poppins", sans-serif;
+  position: relative;
+}
+
+.subnav-center-group {
+  display: flex;
   justify-content: center;
   align-items: center;
   gap: 60px;
-  background-color: #7c4731;
-  border-bottom: 1px solid #e0dbd2;
-  padding: 15px 0;
-  font-family: "Poppins", sans-serif;
-  position: relative;
+  flex: 1;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.subnav-btn-right {
+  margin-left: auto;
 }
 
 .subnav-btn {

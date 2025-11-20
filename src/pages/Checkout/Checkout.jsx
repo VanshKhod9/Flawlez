@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/Cartcontext";
-import { createCheckoutSession, verifyPayment } from "../../api";
+import { createCheckoutSession, verifyPayment, getAccount } from "../../api";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
@@ -13,6 +13,8 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [isRazorpayReady, setIsRazorpayReady] = useState(false);
   const [razorpayError, setRazorpayError] = useState("");
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -33,6 +35,36 @@ export default function Checkout() {
       navigate("/home");
       return;
     }
+
+    // Load saved addresses
+    const loadAddresses = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const accountData = await getAccount(token);
+          if (accountData.addresses && accountData.addresses.length > 0) {
+            setSavedAddresses(accountData.addresses);
+            // Auto-select first address if available
+            const firstAddress = accountData.addresses[0];
+            setSelectedAddressId(firstAddress.id);
+            setFormData({
+              fullName: firstAddress.full_name || "",
+              email: accountData.user?.username || "",
+              mobileNumber: firstAddress.phone || "",
+              address: firstAddress.line1 || "",
+              city: firstAddress.city || "",
+              state: firstAddress.state || "",
+              zipCode: firstAddress.postal_code || "",
+              country: firstAddress.country || "",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error loading addresses:", error);
+      }
+    };
+
+    loadAddresses();
   }, [isLoggedIn, cart, navigate]);
 
   useEffect(() => {
@@ -76,6 +108,20 @@ export default function Checkout() {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleAddressSelect = (address) => {
+    setSelectedAddressId(address.id);
+    setFormData({
+      fullName: address.full_name || "",
+      email: formData.email || "",
+      mobileNumber: address.phone || "",
+      address: address.line1 || "",
+      city: address.city || "",
+      state: address.state || "",
+      zipCode: address.postal_code || "",
+      country: address.country || "",
     });
   };
 
@@ -178,6 +224,25 @@ export default function Checkout() {
         <div className="checkout-wrapper">
           <div className="checkout-form-section">
             <h2>Checkout</h2>
+            {savedAddresses.length > 0 && (
+              <div className="saved-addresses-section">
+                <label>Use Saved Address:</label>
+                <div className="address-selector">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      key={addr.id}
+                      type="button"
+                      className={`address-option ${selectedAddressId === addr.id ? "selected" : ""}`}
+                      onClick={() => handleAddressSelect(addr)}
+                    >
+                      <strong>{addr.label || "Default"}</strong>
+                      <span>{addr.line1}, {addr.city}, {addr.state}</span>
+                    </button>
+                  ))}
+                </div>
+                <hr className="address-divider" />
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="checkout-form">
               <div className="form-group">
                 <label>Full Name *</label>

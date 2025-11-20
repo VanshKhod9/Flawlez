@@ -1,17 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 .site-footer {
-  background-color: #f0eadf;
+  background: linear-gradient(180deg, #f5f0e8 0%, #f0eadf 100%);
   color: #2f241c;
   padding: 60px 20px 40px;
   margin-top: 80px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  font-family: "Inter", sans-serif;
+  border-top: 2px solid rgba(123, 99, 73, 0.15);
+  font-family: 'Poppins', sans-serif;
 }
 
 .footer-container {
-  /* Slightly wider container so footer looks a bit longer on large screens,
-     keep centered and add horizontal padding for small screens */
   width: 100%;
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px;
 }
@@ -19,35 +19,48 @@
 .footer-brand {
   display: flex;
   justify-content: center;
-  margin-bottom: 32px;
+  margin-bottom: 48px;
 }
 
 .footer-logo {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
 }
 
 .footer-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 30px;
-  margin-bottom: 40px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 40px;
+  margin-bottom: 50px;
+  align-items: start;
 }
 
-.footer-column h4,
+.footer-column {
+  display: flex;
+  flex-direction: column;
+}
+
 .footer-column h5 {
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 0.9rem;
-  margin-bottom: 16px;
-  color: #1f150e;
+  letter-spacing: 0.05em;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  color: #2f241c;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+}
+
+.footer-subscribe h5 {
+  margin-bottom: 12px;
 }
 
 .footer-column p {
-  margin: 0 0 18px 0;
-  line-height: 1.6;
+  margin: 0 0 20px 0;
+  line-height: 1.7;
   font-size: 0.95rem;
+  color: rgba(47, 36, 28, 0.8);
+  font-weight: 400;
 }
 
 .footer-column ul {
@@ -57,75 +70,117 @@
 }
 
 .footer-column li {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: rgba(47, 36, 28, 0.8);
 }
 
 .footer-column a {
-  color: inherit;
+  color: rgba(47, 36, 28, 0.8);
   text-decoration: none;
-  position: relative;
+  transition: color 0.2s ease;
+  font-weight: 400;
 }
 
-.footer-column a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -3px;
-  width: 0;
-  height: 1px;
-  background-color: currentColor;
-  transition: width 0.2s ease;
+.footer-column a:hover {
+  color: #7b6349;
 }
 
-.footer-column a:hover::after {
-  width: 100%;
+.footer-column span {
+  font-weight: 600;
+  color: #2f241c;
 }
 
 .footer-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 320px;
+  width: 100%;
 }
 
 .footer-form input {
-  padding: 12px 14px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  padding: 14px 16px;
+  border: 2px solid rgba(123, 99, 73, 0.2);
+  border-radius: 8px;
   font-size: 0.95rem;
   background-color: #fff;
+  color: #2f241c;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.footer-form input:focus {
+  outline: none;
+  border-color: #7b6349;
+  box-shadow: 0 0 0 3px rgba(123, 99, 73, 0.1);
+}
+
+.footer-form input::placeholder {
+  color: rgba(47, 36, 28, 0.4);
 }
 
 .footer-form button {
-  background-color: #0c0c0c;
+  background: linear-gradient(135deg, #7b6349 0%, #5d4a37 100%);
   color: #fff;
   border: none;
-  padding: 12px 14px;
+  padding: 14px 20px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 12px rgba(123, 99, 73, 0.2);
 }
 
-.footer-form button:hover {
-  background-color: #333;
+.footer-form button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(123, 99, 73, 0.3);
+}
+
+.footer-form button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.footer-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.footer-message {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.footer-message.success {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.footer-message.error {
+  color: #f44336;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
 .footer-divider {
   height: 1px;
-  background-color: rgba(0, 0, 0, 0.15);
-  margin: 30px 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(123, 99, 73, 0.2) 50%, transparent 100%);
+  margin: 40px 0 30px;
 }
 
 .footer-bottom {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   font-size: 0.85rem;
 }
 
@@ -133,38 +188,50 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 16px;
+  gap: 20px;
 }
 
 .footer-links a {
-  color: inherit;
+  color: rgba(47, 36, 28, 0.7);
   text-decoration: none;
-  position: relative;
+  transition: color 0.2s ease;
+  font-weight: 400;
 }
 
-.footer-links a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -3px;
-  width: 0;
-  height: 1px;
-  background-color: currentColor;
-  transition: width 0.2s ease;
-}
-
-.footer-links a:hover::after {
-  width: 100%;
+.footer-links a:hover {
+  color: #7b6349;
 }
 
 .footer-copy,
 .footer-address {
   margin: 0;
   font-size: 0.85rem;
-  color: rgba(47, 36, 28, 0.7);
+  color: rgba(47, 36, 28, 0.6);
+  font-weight: 400;
 }
 
-@media (max-width: 720px) {
+.social-links a {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.social-links a:hover {
+  transform: translateX(4px);
+}
+
+@media (max-width: 1200px) {
+  .footer-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 35px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+  }
+
   .footer-form {
     max-width: 100%;
   }
@@ -172,5 +239,21 @@
   .footer-form input,
   .footer-form button {
     width: 100%;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .site-footer {
+    padding: 40px 16px 30px;
   }
 }
