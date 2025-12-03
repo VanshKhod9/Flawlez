@@ -10,7 +10,16 @@ import crypto from "crypto";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+// Allow CORS from any origin (useful for testing and when frontend is hosted elsewhere)
+// NOTE: If you need to send cookies/credentials, change `credentials` to true and set a specific origin.
+app.use(
+  cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: false,
+  })
+);
 app.use(express.json());
 
 const { Pool } = pg;
