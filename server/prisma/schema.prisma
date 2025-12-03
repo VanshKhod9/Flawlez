@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  orders            Order[]
+  addresses         Address[]
+  emailSubscription EmailSubscription?
+
+  @@map("users")
+}
+
+model Order {
+  id                 Int      @id @default(autoincrement())
+  username           String
+  orderData          Json     @map("order_data")
+  shippingAddress    Json     @map("shipping_address")
+  total              Decimal  @db.Decimal(10, 2)
+  paymentStatus      String   @default("pending") @map("payment_status")
+  paymentProvider    String   @default("manual") @map("payment_provider")
+  providerOrderId    String?  @map("provider_order_id")
+  providerPaymentId  String?  @map("provider_payment_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [username], references: [username])
+
+  @@map("orders")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  username   String
+  label      String   @default("Default")
+  fullName   String   @map("full_name")
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String   @map("postal_code")
+  country    String
+  phone      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [username], references: [username])
+
+  @@map("addresses")
+}
+
+model EmailSubscription {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  email        String
+  subscribedAt DateTime @default(now()) @map("subscribed_at")
+  
+  user User @relation(fields: [username], references: [username])
+
+  @@map("email_subscriptions")
+}
