@@ -11,6 +11,7 @@ import Checkout from "./pages/Checkout/Checkout";
 import CheckoutSuccess from "./pages/CheckoutSuccess/CheckoutSuccess";
 import Account from "./pages/Account/Account";
 import EmailSubscriptionPopup from "./component/EmailSubscriptionPopup";
+import Product from "./pages/Product/Product";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} /> {/* Made Home public */}
+          <Route path="/product/:id" element={<Product />} />
 
           <Route path="/bulk-order" element={<BulkOrder />} />
           <Route path="/story" element={<Story />} />

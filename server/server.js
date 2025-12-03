@@ -138,14 +138,7 @@ async function initializeTables() {
     `);
 
     // Create carts table
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS carts (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        cart_data JSONB NOT NULL,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    
 
     // Create orders table
     await db.execute(`
@@ -181,6 +174,15 @@ async function initializeTables() {
       )
     `);
 
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS email_subscriptions (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL,
+        subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     console.log("✅ Database tables initialized");
   } catch (error) {
     console.error("Error initializing tables:", error);
@@ -189,39 +191,7 @@ async function initializeTables() {
 
 initializeTables();
 
-app.post("/api/cart", verifyToken, async (req, res) => {
-  try {
-    const { cart } = req.body;
-    const username = req.user.username;
-
-    await db.execute(
-      "INSERT INTO carts (username, cart_data) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET cart_data = $2, updated_at = CURRENT_TIMESTAMP",
-      [username, JSON.stringify(cart)]
-    );
-
-    res.json({ message: "Cart saved successfully" });
-  } catch (error) {
-    console.error("Error saving cart:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-app.get("/api/cart", verifyToken, async (req, res) => {
-  try {
-    const username = req.user.username;
-    const [rows] = await db.execute("SELECT cart_data FROM carts WHERE username = $1", [username]);
-
-    if (rows.length === 0) {
-      return res.json({ cart: [] });
-    }
-
-    const cart = JSON.parse(rows[0].cart_data);
-    res.json({ cart });
-  } catch (error) {
-    console.error("Error getting cart:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+// Removed cart endpoints; cart is now client-side only
 
 const parsePrice = (value) => {
   if (typeof value === "number") {
@@ -276,7 +246,6 @@ app.post("/api/checkout", verifyToken, async (req, res) => {
     const orderId = result[0].id;
 
     if (!razorpay) {
-      await db.execute("DELETE FROM carts WHERE username = $1", [username]);
       return res.json({
         success: true,
         mode: "simulation",
@@ -366,8 +335,6 @@ app.post("/api/verify-payment", verifyToken, async (req, res) => {
       ["completed", razorpay_payment_id, orderId]
     );
 
-    await db.execute("DELETE FROM carts WHERE username = $1", [username]);
-
     res.json({ success: true });
   } catch (error) {
     console.error("Error verifying payment:", error);
@@ -444,6 +411,50 @@ app.get("/api/account", verifyToken, async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching account data:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/api/subscription/status", verifyToken, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const [rows] = await db.execute(
+      "SELECT email, subscribed_at FROM email_subscriptions WHERE username = $1",
+      [username]
+    );
+    if (rows.length > 0) {
+      return res.json({ subscribed: true, email: rows[0].email, subscribedAt: rows[0].subscribed_at });
+    }
+    res.json({ subscribed: false });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/api/subscription", verifyToken, async (req, res) => {
+  try {
+    const username = req.user.username;
+    const { email } = req.body;
+    if (!email || !email.includes("@")) {
+      return res.status(400).json({ message: "Valid email is required" });
+    }
+    const [existing] = await db.execute(
+      "SELECT id FROM email_subscriptions WHERE username = $1",
+      [username]
+    );
+    if (existing.length > 0) {
+      await db.execute(
+        "UPDATE email_subscriptions SET email = $1, subscribed_at = CURRENT_TIMESTAMP WHERE username = $2",
+        [email, username]
+      );
+      return res.json({ success: true, message: "Subscription updated" });
+    }
+    await db.execute(
+      "INSERT INTO email_subscriptions (username, email) VALUES ($1, $2)",
+      [username, email]
+    );
+    res.json({ success: true, message: "Successfully subscribed" });
+  } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 });

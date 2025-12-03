@@ -99,7 +99,7 @@ async function handleJsonResponse(res) {
   let data;
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (err) {
+  } catch {
     data = { message: text };
   }
 

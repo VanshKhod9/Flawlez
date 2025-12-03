@@ -9,13 +9,10 @@ export default function EmailSubscriptionPopup() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Reset state when login status changes
     if (!isLoggedIn) {
       setIsOpen(false);
-      setIsChecking(false);
       return;
     }
 
@@ -30,12 +27,10 @@ export default function EmailSubscriptionPopup() {
       const token = localStorage.getItem("token");
       if (!token) {
         console.log("🔔 EmailPopup: No token found, not showing popup");
-        setIsChecking(false);
         return;
       }
 
       try {
-        setIsChecking(true);
         console.log("🔔 EmailPopup: User is logged in, checking subscription status...");
         
         const status = await getSubscriptionStatus(token);
@@ -88,8 +83,6 @@ export default function EmailSubscriptionPopup() {
         // Only show if we're 100% sure user is not subscribed
         console.log("🔔 EmailPopup: Error occurred, NOT showing popup to be safe");
         setIsOpen(false);
-      } finally {
-        setIsChecking(false);
       }
     };
 

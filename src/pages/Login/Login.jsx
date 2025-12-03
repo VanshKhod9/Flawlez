@@ -14,7 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  const { setIsLoggedIn, syncCartFromServer } = useContext(CartContext);
+  const { setIsLoggedIn } = useContext(CartContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,17 +28,6 @@ export default function Login() {
         
         // Set login state - this will trigger cart loading
         setIsLoggedIn(true);
-        
-        // Also manually trigger cart sync to be sure
-        setTimeout(async () => {
-          try {
-            console.log("🔄 Manually syncing cart after login...");
-            await syncCartFromServer();
-            console.log("✅ Cart synced manually");
-          } catch (error) {
-            console.error("❌ Manual cart sync error:", error);
-          }
-        }, 300);
         
         setMessage("Login successful!");
         
