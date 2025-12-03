@@ -1,4 +1,6 @@
-const API_URL = "http://localhost:3000/api"; // backend base URL
+// Read API base URL from Vite env var `VITE_API_URL` set in production (Vercel).
+// Local development: create a top-level `.env` with `VITE_API_URL=http://localhost:3000/api`
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
 export async function register(username, password) {
   const res = await fetch(`${API_URL}/register`, {
