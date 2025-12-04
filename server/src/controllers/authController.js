@@ -3,17 +3,20 @@ import jwt from "jsonwebtoken";
 import prisma from "../config/prisma.js";
 
 export const register = async (req, res) => {
-  const { username, password } = req.body;
+  const { firstName, lastName, username, email, password } = req.body;
 
   try {
-    if (!username || !password) {
-      return res.status(400).json({ message: "Username and password required" });
+    if (!firstName || !lastName || !username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.user.create({
       data: {
+        firstName,
+        lastName,
         username,
+        email,
         password: hashedPassword,
       },
     });
@@ -22,7 +25,7 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error("Register error:", error.message, error.code);
     if (error.code === "P2002") {
-      res.json({ message: "Username already exists", success: false });
+      res.json({ message: "Username or email already exists", success: false });
     } else {
       res.status(500).json({ message: "Server error: " + error.message, success: false });
     }
@@ -30,11 +33,16 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { username, password } = req.body;
+  const { usernameOrEmail, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { username },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: usernameOrEmail },
+          { email: usernameOrEmail }
+        ]
+      },
     });
     if (!user) return res.json({ message: "User not found" });
     const validPassword = await bcrypt.compare(password, user.password);

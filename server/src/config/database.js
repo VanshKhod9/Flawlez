@@ -2,6 +2,14 @@ import prisma from "./prisma.js";
 
 export async function initializeTables() {
   try {
+    // Update users table to include new fields
+    await prisma.$executeRaw`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS first_name VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS last_name VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE
+    `;
+    
     // Create reviews table manually since migration failed
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS reviews (

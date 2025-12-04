@@ -2,20 +2,20 @@
 // Local development: create a top-level `.env` with `VITE_API_URL=http://localhost:3000/api`
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-export async function register(username, password) {
+export async function register(userData) {
   const res = await fetch(`${API_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify(userData),
   });
   return res.json();
 }
 
-export async function login(username, password) {
+export async function login(usernameOrEmail, password) {
   const res = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ usernameOrEmail, password }),
   });
   return res.json();
 }

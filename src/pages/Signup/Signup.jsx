@@ -9,14 +9,17 @@ import Footer from "../../component/Footer";
 import "./Signup.css";
 
 export default function Signup() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    const res = await register(username, password);
+    const res = await register({ firstName, lastName, username, email, password });
     setMessage(res.message || "Registered!");
     if (res.message === "User registered successfully") {
       setTimeout(() => navigate("/login"), 1000);
@@ -57,12 +60,39 @@ export default function Signup() {
         <h2 className="signup-title">Create Account</h2>
 
         <form onSubmit={handleRegister} className="signup-form">
-          <label className="signup-label">EMAIL ADDRESS</label>
+          <label className="signup-label">FIRST NAME</label>
+          <input
+            type="text"
+            className="signup-input"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+          />
+
+          <label className="signup-label">LAST NAME</label>
+          <input
+            type="text"
+            className="signup-input"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            required
+          />
+
+          <label className="signup-label">USERNAME</label>
           <input
             type="text"
             className="signup-input"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+
+          <label className="signup-label">EMAIL ADDRESS</label>
+          <input
+            type="email"
+            className="signup-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
