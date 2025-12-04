@@ -36,6 +36,10 @@ export const login = async (req, res) => {
   const { usernameOrEmail, password } = req.body;
 
   try {
+    if (!usernameOrEmail || !password) {
+      return res.status(400).json({ message: "Username/email and password required" });
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -59,7 +63,7 @@ export const login = async (req, res) => {
       message: "Login successful",
     });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
