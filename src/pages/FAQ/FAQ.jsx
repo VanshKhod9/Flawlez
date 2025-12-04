@@ -2,7 +2,11 @@ import React, { useState, useContext, useEffect } from "react";
 import { CartContext } from "../../context/Cartcontext";
 import { getReviews, addReview, updateReview, deleteReview } from "../../api";
 import Navbar from "../../component/Navbar";
+import SubNavbar from "../../component/Subnavbar";
+import CartPopup from "../../component/Cartpopup";
+import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
+import { PRODUCTS } from "../../data/products";
 import "./FAQ.css";
 
 const FAQ_DATA = [
@@ -45,9 +49,10 @@ export default function FAQ() {
   const loadReviews = async () => {
     try {
       const data = await getReviews();
-      setReviews(data);
+      setReviews(data || []);
     } catch (error) {
       console.error("Failed to load reviews:", error);
+      setReviews([]);
     }
   };
 
@@ -94,6 +99,9 @@ export default function FAQ() {
   return (
     <>
       <Navbar />
+      <SubNavbar />
+      <CartPopup />
+      <SearchOverlay products={PRODUCTS} />
       <div className="faq-container">
         <div className="faq-header">
           <h1>Help & Reviews</h1>
@@ -162,8 +170,11 @@ export default function FAQ() {
             )}
 
             <div className="reviews-list">
-              {reviews.map((review) => (
-                <div key={review.id} className="review-item">
+              {reviews.length === 0 ? (
+                <p>No reviews yet. Be the first to write one!</p>
+              ) : (
+                reviews.map((review) => (
+                  <div key={review.id} className="review-item">
                   {editingReview === review.id ? (
                     <EditReviewForm 
                       review={review}
@@ -187,7 +198,8 @@ export default function FAQ() {
                     </>
                   )}
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}

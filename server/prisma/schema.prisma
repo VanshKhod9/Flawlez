@@ -16,7 +16,6 @@ model User {
   orders            Order[]
   addresses         Address[]
   emailSubscription EmailSubscription?
-  reviews           Review[]
 
   @@map("users")
 }
@@ -74,8 +73,6 @@ model Review {
   rating    Int
   comment   String
   createdAt DateTime @default(now()) @map("created_at")
-  
-  user User @relation(fields: [username], references: [username])
 
   @@map("reviews")
 }
