@@ -12,6 +12,7 @@ import CheckoutSuccess from "./pages/CheckoutSuccess/CheckoutSuccess";
 import Account from "./pages/Account/Account";
 import EmailSubscriptionPopup from "./component/EmailSubscriptionPopup";
 import Product from "./pages/Product/Product";
+import FAQ from "./pages/FAQ/FAQ";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/faq" element={<FAQ />} />
 
           {/* Optional fallback */}
           <Route path="*" element={<Navigate to="/home" replace />} />

@@ -196,3 +196,43 @@ export async function subscribeEmail(token, email) {
   });
   return handleJsonResponse(res);
 }
+
+// Review API functions
+export async function getReviews() {
+  const res = await fetch(`${API_URL}/reviews`);
+  return handleJsonResponse(res);
+}
+
+export async function addReview(token, review) {
+  const res = await fetch(`${API_URL}/reviews`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(review),
+  });
+  return handleJsonResponse(res);
+}
+
+export async function updateReview(token, id, review) {
+  const res = await fetch(`${API_URL}/reviews/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(review),
+  });
+  return handleJsonResponse(res);
+}
+
+export async function deleteReview(token, id) {
+  const res = await fetch(`${API_URL}/reviews/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleJsonResponse(res);
+}

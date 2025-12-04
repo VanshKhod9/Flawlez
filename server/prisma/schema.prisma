@@ -16,6 +16,7 @@ model User {
   orders            Order[]
   addresses         Address[]
   emailSubscription EmailSubscription?
+  reviews           Review[]
 
   @@map("users")
 }
@@ -65,4 +66,16 @@ model EmailSubscription {
   user User @relation(fields: [username], references: [username])
 
   @@map("email_subscriptions")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  username  String
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  user User @relation(fields: [username], references: [username])
+
+  @@map("reviews")
 }
