@@ -48,7 +48,11 @@ export default function FAQ() {
 
   const loadReviews = async () => {
     try {
-      const data = await getReviews();
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/reviews`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
       setReviews(data || []);
     } catch (error) {
       console.error("Failed to load reviews:", error);
@@ -189,11 +193,10 @@ export default function FAQ() {
                         <span className="review-date">{new Date(review.createdAt).toLocaleDateString()}</span>
                       </div>
                       <p className="review-comment">{review.comment}</p>
-                      {isLoggedIn && (
+                      {isLoggedIn && review.isOwner && (
                         <div className="review-actions">
                           <button onClick={() => setEditingReview(review.id)}>Edit</button>
                           <button onClick={() => handleDeleteReview(review.id)}>Delete</button>
-                          <small>Debug: isOwner={String(review.isOwner)}, user={review.username}</small>
                         </div>
                       )}
                     </>
