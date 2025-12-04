@@ -3,17 +3,11 @@ import prisma from "../config/prisma.js";
 export const getReviews = async (req, res) => {
   try {
     const reviews = await prisma.review.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: { username: true }
-        }
-      }
+      orderBy: { createdAt: 'desc' }
     });
 
     const reviewsWithOwnership = reviews.map(review => ({
       ...review,
-      username: review.user.username,
       isOwner: req.user ? review.username === req.user.username : false
     }));
 
@@ -34,11 +28,6 @@ export const addReview = async (req, res) => {
         username,
         rating,
         comment,
-      },
-      include: {
-        user: {
-          select: { username: true }
-        }
       }
     });
 
@@ -46,7 +35,6 @@ export const addReview = async (req, res) => {
       success: true, 
       review: {
         ...review,
-        username: review.user.username,
         isOwner: true
       }
     });
@@ -70,11 +58,6 @@ export const updateReview = async (req, res) => {
       data: {
         rating,
         comment,
-      },
-      include: {
-        user: {
-          select: { username: true }
-        }
       }
     });
 
@@ -82,7 +65,6 @@ export const updateReview = async (req, res) => {
       success: true, 
       review: {
         ...review,
-        username: review.user.username,
         isOwner: true
       }
     });
