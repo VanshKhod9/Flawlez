@@ -6,9 +6,10 @@ export const getReviews = async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
+    const currentUser = req.user?.username;
     const reviewsWithOwnership = reviews.map(review => ({
       ...review,
-      isOwner: req.user ? review.username === req.user.username : false
+      isOwner: currentUser ? review.username === currentUser : false
     }));
 
     res.json(reviewsWithOwnership);
