@@ -16,77 +16,38 @@ export default function EmailSubscriptionPopup() {
       return;
     }
 
-    // Check subscription status when user logs in
-    const checkSubscription = async () => {
-      // Only proceed if user is logged in
-      if (!isLoggedIn) {
-        console.log("🔔 EmailPopup: User not logged in, not showing popup");
-        return;
-      }
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("🔔 EmailPopup: No token found, not showing popup");
-        return;
-      }
-
+    const checkAndShowPopup = async () => {
       try {
-        console.log("🔔 EmailPopup: User is logged in, checking subscription status...");
-        
         const status = await getSubscriptionStatus(token);
-        console.log("🔔 EmailPopup: Subscription status:", status);
         
-        // Only show popup if user is logged in AND never subscribed
-        if (status.subscribed === false) {
-          console.log("🔔 EmailPopup: User is logged in and NOT subscribed - will show popup");
-          
-          // Pre-fill email from account if available
+        // Only show if NOT subscribed
+        if (!status.isSubscribed) {
+          // Pre-fill email from username if it's an email
           try {
-            const { getAccount } = await import("../api");
             const accountData = await getAccount(token);
-            if (accountData.user?.username) {
-              // Use username as email if it looks like an email
-              const username = accountData.user.username;
-              if (username.includes("@")) {
-                setEmail(username);
-                console.log("🔔 EmailPopup: Pre-filled email:", username);
-              }
+            if (accountData.username?.includes("@")) {
+              setEmail(accountData.username);
             }
           } catch (err) {
-            // Ignore error, just don't pre-fill
-            console.log("🔔 EmailPopup: Could not pre-fill email:", err);
+            // Ignore error
           }
           
           // Show popup after 2 seconds
-          const timer = setTimeout(() => {
-            // Double-check user is still logged in before showing
-            const currentToken = localStorage.getItem("token");
-            const stillLoggedIn = !!currentToken;
-            
-            if (stillLoggedIn) {
-              console.log("🔔 EmailPopup: Opening popup now!");
+          setTimeout(() => {
+            if (localStorage.getItem("token")) {
               setIsOpen(true);
-            } else {
-              console.log("🔔 EmailPopup: User logged out, not showing popup");
             }
           }, 2000);
-          
-          return () => clearTimeout(timer);
-        } else {
-          // User is already subscribed, don't show popup
-          console.log("🔔 EmailPopup: User already subscribed:", status.email, "- NOT showing popup");
-          setIsOpen(false);
         }
       } catch (error) {
-        console.error("🔔 EmailPopup: Error checking subscription status:", error);
-        // On error, don't show popup - safer approach
-        // Only show if we're 100% sure user is not subscribed
-        console.log("🔔 EmailPopup: Error occurred, NOT showing popup to be safe");
-        setIsOpen(false);
+        console.error("Subscription check failed:", error);
       }
     };
 
-    checkSubscription();
+    checkAndShowPopup();
   }, [isLoggedIn]);
 
   const handleClose = () => {
@@ -113,10 +74,11 @@ export default function EmailSubscriptionPopup() {
       
       if (response.success) {
         setSubmitted(true);
-        console.log("Successfully subscribed:", email);
         
+        // Close popup after showing success
         setTimeout(() => {
           setIsOpen(false);
+          setSubmitted(false); // Reset for next time
         }, 2000);
       } else {
         alert(response.message || "Failed to subscribe. Please try again.");
