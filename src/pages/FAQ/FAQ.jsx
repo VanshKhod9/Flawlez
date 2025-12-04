@@ -189,10 +189,11 @@ export default function FAQ() {
                         <span className="review-date">{new Date(review.createdAt).toLocaleDateString()}</span>
                       </div>
                       <p className="review-comment">{review.comment}</p>
-                      {isLoggedIn && review.isOwner && (
+                      {isLoggedIn && (
                         <div className="review-actions">
                           <button onClick={() => setEditingReview(review.id)}>Edit</button>
                           <button onClick={() => handleDeleteReview(review.id)}>Delete</button>
+                          <small>Debug: isOwner={String(review.isOwner)}, user={review.username}</small>
                         </div>
                       )}
                     </>
