@@ -3,20 +3,17 @@ import jwt from "jsonwebtoken";
 import prisma from "../config/prisma.js";
 
 export const register = async (req, res) => {
-  const { firstName, lastName, username, email, password } = req.body;
+  const { username, password } = req.body;
 
   try {
-    if (!firstName || !lastName || !username || !email || !password) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password required" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await prisma.user.create({
       data: {
-        firstName,
-        lastName,
         username,
-        email,
         password: hashedPassword,
       },
     });
@@ -25,7 +22,7 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error("Register error:", error.message, error.code);
     if (error.code === "P2002") {
-      res.json({ message: "Username or email already exists", success: false });
+      res.json({ message: "Username already exists", success: false });
     } else {
       res.status(500).json({ message: "Server error: " + error.message, success: false });
     }
@@ -33,20 +30,11 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { usernameOrEmail, password } = req.body;
+  const { username, password } = req.body;
 
   try {
-    if (!usernameOrEmail || !password) {
-      return res.status(400).json({ message: "Username/email and password required" });
-    }
-
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { username: usernameOrEmail },
-          { email: usernameOrEmail }
-        ]
-      },
+    const user = await prisma.user.findUnique({
+      where: { username },
     });
     if (!user) return res.json({ message: "User not found" });
     const validPassword = await bcrypt.compare(password, user.password);
@@ -63,7 +51,7 @@ export const login = async (req, res) => {
       message: "Login successful",
     });
   } catch (err) {
-    console.error("Login error:", err);
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };

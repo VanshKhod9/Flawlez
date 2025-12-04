@@ -10,7 +10,7 @@ import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
 
 export default function Login() {
-  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await login(usernameOrEmail, password);
+      const res = await login(username, password);
 
       if (res.accessToken) {
         localStorage.setItem("token", res.accessToken);
@@ -78,12 +78,12 @@ export default function Login() {
         <h2 className="login-title">Account Login</h2>
 
         <form onSubmit={handleLogin} className="login-form">
-          <label className="login-label">EMAIL ADDRESS</label>
+          <label className="login-label">USERNAME</label>
           <input
             type="text"
             className="login-input"
-            value={usernameOrEmail}
-            onChange={(e) => setUsernameOrEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
 
