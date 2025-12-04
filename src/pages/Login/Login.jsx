@@ -10,7 +10,7 @@ import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
 
 export default function Login() {
-  const [username, setUsername] = useState("");
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await login(username, password);
+      const res = await login(usernameOrEmail, password);
 
       if (res.accessToken) {
         localStorage.setItem("token", res.accessToken);
@@ -82,8 +82,8 @@ export default function Login() {
           <input
             type="text"
             className="login-input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={usernameOrEmail}
+            onChange={(e) => setUsernameOrEmail(e.target.value)}
             required
           />
 
