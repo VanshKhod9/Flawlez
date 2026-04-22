@@ -1,34 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
+import { useProducts } from "../../context/ProductContext";
 import "./Quiz.css";
-
-const searchProducts = [
-  {
-    id: "sermon",
-    name: "SERMON",
-    description: "FRUITY & DECADENT · MEDIUM ROAST",
-    price: "₹550.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "streetlevel",
-    name: "STREETLEVEL",
-    description: "SWEET & BALANCED · MEDIUM ROAST",
-    price: "₹520.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "aster",
-    name: "ASTER",
-    description: "VIBRANT & COMPLEX · MEDIUM ROAST",
-    price: "₹540.00",
-    image: "/Flawlez 2.png",
-  },
-];
 
 const quizQuestions = [
   {
@@ -97,6 +75,8 @@ const recommendations = {
 };
 
 export default function Quiz() {
+  const { products } = useProducts();
+  const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState({});
   const [showResult, setShowResult] = useState(false);
@@ -146,7 +126,7 @@ export default function Quiz() {
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay products={searchProducts} />
+      <SearchOverlay products={products} />
       
       <main className="quiz-page">
         <div className="quiz-container">
@@ -189,7 +169,7 @@ export default function Quiz() {
                 <h3>{recommendation.name}</h3>
                 <p className="recommendation-description">{recommendation.description}</p>
                 <p className="recommendation-reason">{recommendation.reason}</p>
-                <button className="quiz-shop-btn" onClick={() => window.location.href = "/home"}>
+                <button className="quiz-shop-btn" onClick={() => navigate("/home")}>
                   Shop {recommendation.name}
                 </button>
               </div>
@@ -205,4 +185,3 @@ export default function Quiz() {
     </>
   );
 }
-

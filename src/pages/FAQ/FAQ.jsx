@@ -1,12 +1,12 @@
 import React, { useState, useContext, useEffect } from "react";
 import { CartContext } from "../../context/Cartcontext";
-import { getReviews, addReview, updateReview, deleteReview } from "../../api";
+import { addReview, updateReview, deleteReview } from "../../api";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
-import { PRODUCTS } from "../../data/products";
+import { useProducts } from "../../context/ProductContext";
 import "./FAQ.css";
 
 const FAQ_DATA = [
@@ -34,6 +34,7 @@ const FAQ_DATA = [
 
 export default function FAQ() {
   const { isLoggedIn } = useContext(CartContext);
+  const { products } = useProducts();
   const [activeTab, setActiveTab] = useState("faq");
   const [openFAQ, setOpenFAQ] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -105,7 +106,7 @@ export default function FAQ() {
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay products={PRODUCTS} />
+      <SearchOverlay products={products} />
       <div className="faq-container">
         <div className="faq-header">
           <h1>Help & Reviews</h1>

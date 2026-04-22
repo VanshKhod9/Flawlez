@@ -1,60 +1,130 @@
-import React, { useMemo, useState, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
-import { PRODUCTS } from "../../data/products";
 import { CartContext } from "../../context/Cartcontext";
+import { useProducts } from "../../context/ProductContext";
+import { getProduct } from "../../api";
 import "./Product.css";
+
+const trustPoints = ["Secure payment", "Fresh roast dispatch", "Support from your account"];
 
 export default function Product() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
-  const product = useMemo(() => PRODUCTS.find((p) => p.id === id), [id]);
+  const { products, loading, refreshProducts } = useProducts();
+  const [product, setProduct] = useState(null);
+  const [productError, setProductError] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("250g");
   const [grind, setGrind] = useState("Whole Bean");
+  const [activeImage, setActiveImage] = useState("");
+
+  const fallbackProduct = useMemo(
+    () => products.find((item) => item.slug === id || String(item.id) === String(id)),
+    [id, products]
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    const loadProduct = async () => {
+      if (fallbackProduct) {
+        setProduct(fallbackProduct);
+        return;
+      }
+
+      try {
+        const data = await getProduct(id);
+        if (!active) return;
+        setProduct(data.product);
+        setProductError("");
+      } catch (error) {
+        if (!active) return;
+        setProductError(error.message || "Unable to load product.");
+      }
+    };
+
+    loadProduct();
+    return () => {
+      active = false;
+    };
+  }, [fallbackProduct, id]);
+
+  useEffect(() => {
+    if (products.length === 0 && !loading) {
+      refreshProducts();
+    }
+  }, [loading, products.length, refreshProducts]);
+
+  const currentProduct = product || fallbackProduct;
+
+  useEffect(() => {
+    if (currentProduct) {
+      setActiveImage(currentProduct.gallery?.[0] || currentProduct.image);
+    }
+  }, [currentProduct]);
 
   const parsePrice = (value) => {
-    const numeric = parseFloat(String(value).replace(/[^0-9.]/g, ""));
+    const numeric = Number.parseFloat(String(value).replace(/[^0-9.]/g, ""));
     return Number.isNaN(numeric) ? 0 : numeric;
   };
 
-  if (!product) {
+  if (!currentProduct && loading) {
     return (
       <>
         <Navbar />
         <SubNavbar />
         <div className="product-page">
           <div className="product-container">
-            <h2>Product not found</h2>
-            <button className="product-back" onClick={() => navigate("/home")}>Back to shop</button>
+            <h2>Loading product...</h2>
           </div>
         </div>
       </>
     );
   }
 
-  const base = parsePrice(product.price);
+  if (!currentProduct) {
+    return (
+      <>
+        <Navbar />
+        <SubNavbar />
+        <div className="product-page">
+          <div className="product-container">
+            <h2>{productError || "Product not found"}</h2>
+            <button className="product-back" onClick={() => navigate("/home")}>
+              Back to shop
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const base = parsePrice(currentProduct.priceValue ?? currentProduct.price);
   const sizeMultiplier = size === "250g" ? 1 : size === "500g" ? 1.9 : 3.5;
   const unitPrice = (base * sizeMultiplier).toFixed(2);
   const total = (base * sizeMultiplier * quantity).toFixed(2);
+  const gallery = currentProduct.gallery?.length ? currentProduct.gallery : [currentProduct.image];
+  const isSoldOut = currentProduct.stock <= 0;
 
   const buildItem = () => ({
-    id: `${product.id}-${size}-${grind}`,
-    name: product.name,
-    description: `${product.description} • ${size} • ${grind}`,
+    id: `${currentProduct.slug}-${size}-${grind}`,
+    productId: currentProduct.id,
+    slug: currentProduct.slug,
+    name: currentProduct.name,
+    description: `${currentProduct.description} • ${size} • ${grind}`,
     price: `₹${unitPrice}`,
-    image: product.image,
+    image: activeImage || currentProduct.image,
     quantity,
+    selectedSize: size,
+    selectedGrind: grind,
+    unitPrice,
   });
-
-  const handleAdd = () => {
-    addToCart(buildItem());
-  };
 
   const handleBuyNow = () => {
     addToCart(buildItem());
@@ -66,26 +136,46 @@ export default function Product() {
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay products={PRODUCTS} />
+      <SearchOverlay products={products} />
       <div className="product-page">
         <div className="product-container">
           <div className="product-left">
-            <img src={product.image} alt={product.name} className="product-hero" />
+            <img src={activeImage || currentProduct.image} alt={currentProduct.name} className="product-hero" />
+            <div className="product-gallery-strip">
+              {gallery.map((image) => (
+                <button
+                  key={image}
+                  className={`gallery-thumb ${activeImage === image ? "active" : ""}`}
+                  onClick={() => setActiveImage(image)}
+                >
+                  <img src={image} alt={currentProduct.name} loading="lazy" />
+                </button>
+              ))}
+            </div>
             <div className="product-notes">
-              {product.notes?.map((n) => (
-                <span key={n} className="note-chip">{n}</span>
+              {(currentProduct.notes || []).map((note) => (
+                <span key={note} className="note-chip">
+                  {note}
+                </span>
               ))}
             </div>
           </div>
 
           <div className="product-right">
-            <h1 className="product-title">{product.name}</h1>
-            <p className="product-desc">{product.description}</p>
+            <span className="product-kicker">{currentProduct.tag || "Signature roast"}</span>
+            <h1 className="product-title">{currentProduct.name}</h1>
+            <p className="product-desc">{currentProduct.longDescription || currentProduct.description}</p>
+
+            <div className="product-trust">
+              {trustPoints.map((point) => (
+                <span key={point}>{point}</span>
+              ))}
+            </div>
 
             <div className="product-options">
               <label>
                 Size
-                <select value={size} onChange={(e) => setSize(e.target.value)}>
+                <select value={size} onChange={(event) => setSize(event.target.value)}>
                   <option value="250g">250g</option>
                   <option value="500g">500g</option>
                   <option value="1kg">1kg</option>
@@ -93,7 +183,7 @@ export default function Product() {
               </label>
               <label>
                 Grind
-                <select value={grind} onChange={(e) => setGrind(e.target.value)}>
+                <select value={grind} onChange={(event) => setGrind(event.target.value)}>
                   <option>Whole Bean</option>
                   <option>Espresso</option>
                   <option>Pour-over</option>
@@ -103,37 +193,78 @@ export default function Product() {
               <label>
                 Quantity
                 <div className="qty-row">
-                  <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="qty-btn">−</button>
-                  <input type="number" min={1} value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))} />
-                  <button onClick={() => setQuantity((q) => q + 1)} className="qty-btn">+</button>
+                  <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="qty-btn">
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+                  />
+                  <button onClick={() => setQuantity((value) => value + 1)} className="qty-btn">
+                    +
+                  </button>
                 </div>
               </label>
             </div>
 
-              <div className="product-buy">
+            <div className="product-buy">
+              <div className="product-price-block">
+                <span>Selected total</span>
                 <div className="product-price">₹{total}</div>
-              <button className="buy-btn" onClick={handleAdd}>Add to Cart</button>
-              <button className="secondary-btn" onClick={handleBuyNow}>Buy Now</button>
               </div>
+              <button className="buy-btn" onClick={() => addToCart(buildItem())} disabled={isSoldOut}>
+                {isSoldOut ? "Sold Out" : "Add to Cart"}
+              </button>
+              <button className="secondary-btn" onClick={handleBuyNow} disabled={isSoldOut}>
+                Buy Now
+              </button>
+            </div>
+
+            <div className="stock-indicator">
+              {isSoldOut ? "Currently unavailable" : `${currentProduct.stock} units in stock`}
+            </div>
+
+            <div className="product-benefits">
+              {(currentProduct.benefits || []).map((benefit) => (
+                <div key={benefit} className="benefit-pill">
+                  {benefit}
+                </div>
+              ))}
+            </div>
 
             <div className="product-meta">
-              <div className="meta-item">Roast: Medium</div>
-              <div className="meta-item">Origin: India & East Africa</div>
-              <div className="meta-item">Process: Washed & Natural</div>
+              <div className="meta-item">Roast: {currentProduct.roast}</div>
+              <div className="meta-item">Origin: {currentProduct.origin}</div>
+              <div className="meta-item">Process: {currentProduct.process}</div>
             </div>
           </div>
+        </div>
+
+        <div className="sticky-buy-bar">
+          <div>
+            <strong>{currentProduct.name}</strong>
+            <span>₹{total}</span>
+          </div>
+          <button onClick={() => addToCart(buildItem())} disabled={isSoldOut}>
+            {isSoldOut ? "Sold Out" : "Add to Cart"}
+          </button>
         </div>
 
         <div className="suggestions">
           <h3>You may also like</h3>
           <div className="suggest-grid">
-            {PRODUCTS.filter((p) => p.id !== product.id).map((p) => (
-              <div key={p.id} className="suggest-card" onClick={() => navigate(`/product/${p.id}`)}>
-                <img src={p.image} alt={p.name} />
-                <div className="suggest-name">{p.name}</div>
-                <div className="suggest-price">{p.price}</div>
-              </div>
-            ))}
+            {products
+              .filter((item) => item.slug !== currentProduct.slug)
+              .slice(0, 3)
+              .map((item) => (
+                <div key={item.id || item.slug} className="suggest-card" onClick={() => navigate(`/product/${item.slug}`)}>
+                  <img src={item.image} alt={item.name} loading="lazy" />
+                  <div className="suggest-name">{item.name}</div>
+                  <div className="suggest-price">{item.price}</div>
+                </div>
+              ))}
           </div>
         </div>
       </div>

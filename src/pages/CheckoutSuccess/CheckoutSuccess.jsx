@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { CartContext } from "../../context/Cartcontext";
+import { getOrderById } from "../../api";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
@@ -24,30 +25,15 @@ export default function CheckoutSuccess() {
     const fetchOrder = async () => {
       try {
         const token = localStorage.getItem("token");
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-        const response = await fetch(`${API_URL}/checkout-success/${orderId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const data = await getOrderById(token, orderId);
 
-        if (response.ok) {
-          const data = await response.json();
-          let parsedShipping = null;
-          if (data.order?.shipping_address) {
-            try {
-              parsedShipping = JSON.parse(data.order.shipping_address);
-            } catch (parseError) {
-              console.error("Failed to parse shipping address:", parseError);
-            }
-          }
-
+        if (data.order) {
           setOrder({
             ...data.order,
-            shipping_address: parsedShipping,
+            shipping_address: data.order.shippingAddress || data.order.shipping_address || null,
           });
-          
-          if (data.order && (data.order.payment_status === "completed" || data.order.payment_status === "pending_payment")) {
+
+          if (data.order.payment_status === "paid" || data.order.payment_status === "pending") {
             clearCart();
           }
         }
@@ -86,7 +72,8 @@ export default function CheckoutSuccess() {
           {order ? (
             <>
               <p className="order-id">Order ID: #{order.id}</p>
-              <p className="order-status">Status: {order.payment_status}</p>
+              <p className="order-status">Payment: {order.payment_status}</p>
+              <p className="order-status">Fulfillment: {order.fulfillment_status}</p>
               <p className="order-total">
                 Total: ₹{(Number.parseFloat(order.total) || 0).toFixed(2)}
               </p>
@@ -117,4 +104,3 @@ export default function CheckoutSuccess() {
     </>
   );
 }
-

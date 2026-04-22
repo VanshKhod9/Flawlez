@@ -16,3 +16,11 @@ export const verifyToken = (req, res, next) => {
     next();
   });
 };
+
+export const requireAdmin = (req, res, next) => {
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ message: "Admin access required.", success: false });
+  }
+
+  next();
+};

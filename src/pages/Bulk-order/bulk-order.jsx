@@ -4,31 +4,8 @@ import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
+import { useProducts } from "../../context/ProductContext";
 import "./BulkOrder.css";
-
-const searchProducts = [
-  {
-    id: "wholesale-sermon",
-    name: "SERMON",
-    description: "FRUITY & DECADENT · MEDIUM ROAST",
-    price: "₹550.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "wholesale-streetlevel",
-    name: "STREETLEVEL",
-    description: "SWEET & BALANCED · MEDIUM ROAST",
-    price: "₹520.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "wholesale-aster",
-    name: "ASTER",
-    description: "VIBRANT & COMPLEX · MEDIUM ROAST",
-    price: "₹540.00",
-    image: "/Flawlez 2.png",
-  },
-];
 
 const advantages = [
   {
@@ -54,6 +31,7 @@ const orderTypes = [
 ];
 
 export default function BulkOrder() {
+  const { products } = useProducts();
   const [formData, setFormData] = useState({
     company: "",
     contactPerson: "",
@@ -87,7 +65,7 @@ export default function BulkOrder() {
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay products={searchProducts} />
+      <SearchOverlay products={products} />
       <main className="bulk-page">
         <section className="bulk-hero">
           <div className="bulk-hero-content">

@@ -13,31 +13,8 @@ import {
   changePassword,
 } from "../../api";
 import { CartContext } from "../../context/Cartcontext";
+import { useProducts } from "../../context/ProductContext";
 import "./Account.css";
-
-const searchProducts = [
-  {
-    id: "sermon",
-    name: "SERMON",
-    description: "FRUITY & DECADENT · MEDIUM ROAST",
-    price: "₹550.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "streetlevel",
-    name: "STREETLEVEL",
-    description: "SWEET & BALANCED · MEDIUM ROAST",
-    price: "₹520.00",
-    image: "/Flawlez 2.png",
-  },
-  {
-    id: "aster",
-    name: "ASTER",
-    description: "VIBRANT & COMPLEX · MEDIUM ROAST",
-    price: "₹540.00",
-    image: "/Flawlez 2.png",
-  },
-];
 
 const emptyAddress = {
   label: "Default",
@@ -54,6 +31,7 @@ const emptyAddress = {
 export default function Account() {
   const { logout } = useContext(CartContext);
   const navigate = useNavigate();
+  const { products } = useProducts();
   const [loading, setLoading] = useState(true);
   const [account, setAccount] = useState({ user: null, orders: [], addresses: [] });
   const [error, setError] = useState("");
@@ -257,7 +235,7 @@ export default function Account() {
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay products={searchProducts} />
+      <SearchOverlay products={products} />
 
       <main className="account-page">
         {loading ? (
@@ -328,6 +306,11 @@ export default function Account() {
                   <a href="#addresses">View Addresses ({account.addresses.length})</a>
                   <a href="#password">Reset Password</a>
                   <a href="mailto:subscriptions@coffeecollective.in">Manage Subscriptions</a>
+                  {account.user?.isAdmin ? (
+                    <button className="link-btn" onClick={() => navigate("/admin")}>
+                      Open Admin Dashboard
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </section>

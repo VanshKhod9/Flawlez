@@ -1,10 +1,10 @@
 import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/Cartcontext";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const { cart, toggleCart, isLoggedIn, setIsSearchOpen } = useContext(CartContext);
+  const { cart, toggleCart, isLoggedIn, setIsSearchOpen, currentUser } = useContext(CartContext);
   const navigate = useNavigate();
 
   const handleAccountClick = () => {
@@ -22,17 +22,26 @@ export default function Navbar() {
 
   return (
     <nav className="navbar-container">
-      <div className="navbar-logo">
-        <img src="/Flawlez5.png" alt="Logo" className="Login-logo" />
-      </div>
+      <Link to="/home" className="navbar-logo" aria-label="Go to home">
+        <img src="/Flawlez5.png" alt="Flawlez Coffee" className="Login-logo" />
+      </Link>
 
       <div className="navbar-icons">
-        <img src="/loupe.png" alt="search" className="logoo" onClick={handleSearchClick} />
-        <img src="/person.png" alt="account" className="logoo" onClick={handleAccountClick} />
-        <div className="cart-icon-wrapper" onClick={toggleCart}>
-          <img src="/online-shopping.png" alt="cart" className="logoo" />
+        {currentUser?.isAdmin ? (
+          <button className="navbar-admin-btn" onClick={() => navigate("/admin")}>
+            Admin
+          </button>
+        ) : null}
+        <button className="navbar-icon-btn" onClick={handleSearchClick} aria-label="Search products">
+          <img src="/loupe.png" alt="" className="logoo" />
+        </button>
+        <button className="navbar-icon-btn" onClick={handleAccountClick} aria-label="Open account">
+          <img src="/person.png" alt="" className="logoo" />
+        </button>
+        <button className="cart-icon-wrapper navbar-icon-btn" onClick={toggleCart} aria-label="Open cart">
+          <img src="/online-shopping.png" alt="" className="logoo" />
           {cart.length > 0 && <span className="cart-count">{cart.length}</span>}
-        </div>
+        </button>
       </div>
     </nav>
   );

@@ -2,25 +2,26 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Subnavbar.css";
 
+const navItems = [
+  { label: "Shop", mobileLabel: "Shop", path: "/home" },
+  { label: "Bulk Order", mobileLabel: "Bulk", path: "/bulk-order" },
+  { label: "Story", mobileLabel: "Story", path: "/story" },
+  { label: "Quiz", mobileLabel: "Quiz", path: "/quiz" },
+];
+
 export default function SubNavbar() {
   const navigate = useNavigate();
 
   return (
     <div className="subnavbar-container">
       <div className="subnav-center-group">
-        <button className="subnav-btn" onClick={() => navigate("/home")}>
-          Shop
-        </button>
-        <button className="subnav-btn" onClick={() => navigate("/bulk-order")}>
-          Bulk Order
-        </button>
-        <button className="subnav-btn" onClick={() => navigate("/story")}>
-          Story
-        </button>
+        {navItems.map((item) => (
+          <button key={item.path} className="subnav-btn" onClick={() => navigate(item.path)}>
+            <span className="subnav-label-full">{item.label}</span>
+            <span className="subnav-label-mobile">{item.mobileLabel}</span>
+          </button>
+        ))}
       </div>
-      <button className="subnav-btn subnav-btn-right" onClick={() => navigate("/quiz")}>
-        Quiz
-      </button>
     </div>
   );
 }

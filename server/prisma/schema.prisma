@@ -8,13 +8,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  firstName String?  @map("first_name")
-  lastName  String?  @map("last_name")
-  username  String   @unique
-  email     String?  @unique
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int       @id @default(autoincrement())
+  firstName  String?   @map("first_name")
+  lastName   String?   @map("last_name")
+  username   String    @unique
+  email      String?   @unique
+  phone      String?   @unique
+  password   String
+  isVerified Boolean   @default(false) @map("is_verified")
+  isAdmin    Boolean   @default(false) @map("is_admin")
+  createdAt  DateTime  @default(now()) @map("created_at")
   
   orders            Order[]
   addresses         Address[]
@@ -28,11 +31,16 @@ model Order {
   username           String
   orderData          Json     @map("order_data")
   shippingAddress    Json     @map("shipping_address")
+  subtotal           Decimal  @default(0) @db.Decimal(10, 2)
+  discountAmount     Decimal  @default(0) @map("discount_amount") @db.Decimal(10, 2)
   total              Decimal  @db.Decimal(10, 2)
+  couponCode         String?  @map("coupon_code")
   paymentStatus      String   @default("pending") @map("payment_status")
+  fulfillmentStatus  String   @default("processing") @map("fulfillment_status")
   paymentProvider    String   @default("manual") @map("payment_provider")
   providerOrderId    String?  @map("provider_order_id")
   providerPaymentId  String?  @map("provider_payment_id")
+  paymentError       String?  @map("payment_error")
   createdAt          DateTime @default(now()) @map("created_at")
   
   user User @relation(fields: [username], references: [username])
@@ -78,4 +86,47 @@ model Review {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("reviews")
+}
+
+model Product {
+  id               Int      @id @default(autoincrement())
+  slug             String   @unique
+  name             String
+  shortDescription String   @map("short_description")
+  longDescription  String?  @map("long_description")
+  price            Decimal  @db.Decimal(10, 2)
+  image            String
+  gallery          Json?
+  benefits         Json?
+  tag              String?
+  notes            Json?
+  roast            String?
+  origin           String?
+  process          String?
+  stock            Int      @default(50)
+  featured         Boolean  @default(false)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("products")
+}
+
+model Coupon {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique
+  description   String?
+  type          String
+  value         Decimal   @db.Decimal(10, 2)
+  minOrderValue Decimal   @default(0) @map("min_order_value") @db.Decimal(10, 2)
+  maxDiscount   Decimal?  @map("max_discount") @db.Decimal(10, 2)
+  usageLimit    Int?      @map("usage_limit")
+  usageCount    Int       @default(0) @map("usage_count")
+  isActive      Boolean   @default(true) @map("is_active")
+  startsAt      DateTime? @map("starts_at")
+  expiresAt     DateTime? @map("expires_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("coupons")
 }

@@ -1,22 +1,30 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { initializeTables } from "./src/config/database.js";
-import routes from "./src/routes/index.js";
+import "./src/config/env.js";
 
-dotenv.config();
+const [{ default: express }, { default: cors }, { initializeTables }, { default: routes }, { razorpayWebhook }] =
+  await Promise.all([
+    import("express"),
+    import("cors"),
+    import("./src/config/database.js"),
+    import("./src/routes/index.js"),
+    import("./src/controllers/orderController.js"),
+  ]);
 
 const app = express();
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
   cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: allowedOrigins.length === 0 ? true : allowedOrigins,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: false,
   })
 );
 
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), razorpayWebhook);
 app.use(express.json());
 
 // Initialize database tables

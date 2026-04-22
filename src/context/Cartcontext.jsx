@@ -1,97 +1,98 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useEffect, useState } from "react";
+import { getStoredSession, parseJwt } from "../utils/session";
 
-export const CartContext = createContext(); 
+export const CartContext = createContext();
+
+const CART_STORAGE_KEY = "flawlez-cart";
 
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const initialSession = typeof window !== "undefined" ? getStoredSession() : { token: null, user: null };
+  const [cart, setCart] = useState(() => {
+    if (typeof window === "undefined") return [];
+
+    try {
+      const saved = localStorage.getItem(CART_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [currentUser, setCurrentUser] = useState(initialSession.user);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(initialSession.token));
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
 
-
-  const getItemKey = useCallback((item) => {
+  const getItemKey = (item) => {
     if (!item) return null;
+
     const key =
       item.id ??
       item.productId ??
+      item.slug ??
       item.sku ??
       item.variantId ??
       (typeof item.name === "string" && item.name.trim() ? item.name : null);
+
     return key != null ? String(key) : null;
-  }, []);
+  };
 
-  const findItemIndexByKey = useCallback(
-    (itemKey, items) => {
-      if (!itemKey) return -1;
-      return items.findIndex((item) => getItemKey(item) === itemKey);
-    },
-    [getItemKey]
-  );
+  const setSessionFromToken = (token) => {
+    if (!token) {
+      localStorage.removeItem("token");
+      setCurrentUser(null);
+      setIsLoggedIn(false);
+      return;
+    }
 
-  
-
-  const syncCartFromServer = useCallback(async () => {}, []);
+    localStorage.setItem("token", token);
+    setCurrentUser(parseJwt(token));
+    setIsLoggedIn(true);
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  }, [cart]);
 
-  useEffect(() => {}, [isLoggedIn]);
-
-  
-
-  
-
-  // ✅ Add to cart — handles duplicates by increasing quantity
   const addToCart = (product) => {
     setCart((prev) => {
       const productKey = getItemKey(product);
-      const index = productKey ? findItemIndexByKey(productKey, prev) : -1;
-      let newCart;
+      const index = prev.findIndex((item) => getItemKey(item) === productKey);
+
       if (index >= 0) {
-        newCart = prev.map((item, i) =>
-          i === index
+        return prev.map((item, itemIndex) =>
+          itemIndex === index
             ? {
                 ...item,
                 quantity: Number(item.quantity) > 0 ? Number(item.quantity) + 1 : 1,
               }
             : item
         );
-      } else {
-        newCart = [...prev, { ...product, quantity: 1 }];
       }
-      
-      return newCart;
+
+      return [...prev, { ...product, quantity: Number(product.quantity) > 0 ? Number(product.quantity) : 1 }];
     });
   };
 
-  // ✅ Remove item entirely
   const removeFromCart = (itemKey) => {
     if (!itemKey) return;
-    setCart((prev) => {
-      const index = findItemIndexByKey(itemKey, prev);
-      if (index === -1) return prev;
-      const newCart = [...prev.slice(0, index), ...prev.slice(index + 1)];
-      return newCart;
-    });
+
+    setCart((prev) => prev.filter((item) => getItemKey(item) !== itemKey));
   };
 
-  // ✅ Update quantity function for +/–
   const updateQuantity = (itemKey, newQty) => {
     const normalizedQty = Number(newQty);
     if (Number.isNaN(normalizedQty)) return;
+
     setCart((prevCart) => {
-      const index = findItemIndexByKey(itemKey, prevCart);
-      if (index === -1) return prevCart;
       if (normalizedQty <= 0) {
-        return [...prevCart.slice(0, index), ...prevCart.slice(index + 1)];
+        return prevCart.filter((item) => getItemKey(item) !== itemKey);
       }
 
-      const updatedCart = [...prevCart];
-      updatedCart[index] = { ...updatedCart[index], quantity: normalizedQty };
-      return updatedCart;
+      return prevCart.map((item) =>
+        getItemKey(item) === itemKey ? { ...item, quantity: normalizedQty } : item
+      );
     });
   };
 
@@ -99,8 +100,9 @@ export const CartProvider = ({ children }) => {
     setIsCartOpen((prev) => !prev);
   };
 
-  const logout = async () => {
+  const logout = () => {
     localStorage.removeItem("token");
+    setCurrentUser(null);
     setIsLoggedIn(false);
   };
 
@@ -119,11 +121,12 @@ export const CartProvider = ({ children }) => {
         toggleCart,
         isLoggedIn,
         setIsLoggedIn,
+        currentUser,
+        setSessionFromToken,
         logout,
         isSearchOpen,
         setIsSearchOpen,
         clearCart,
-        syncCartFromServer,
         isLoginPopupOpen,
         setIsLoginPopupOpen,
         getItemKey,

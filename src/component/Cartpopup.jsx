@@ -1,21 +1,20 @@
-import React, { useContext, useEffect, useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/Cartcontext";
 import "./CartPopup.css";
 
 export default function CartPopup() {
-  const { cart, removeFromCart, isCartOpen, toggleCart, updateQuantity, isLoggedIn, getItemKey } =
-    useContext(CartContext);
+  const {
+    cart,
+    removeFromCart,
+    isCartOpen,
+    toggleCart,
+    updateQuantity,
+    isLoggedIn,
+    getItemKey,
+    setIsLoginPopupOpen,
+  } = useContext(CartContext);
   const navigate = useNavigate();
-
-  // Debug: Log cart changes
-  useEffect(() => {
-    console.log("🛒 CartPopup - Cart state changed:", {
-      cartLength: cart.length,
-      cartItems: cart,
-      isLoggedIn: isLoggedIn,
-    });
-  }, [cart, isLoggedIn]);
 
   const parsePrice = (value) => {
     const numericPrice = parseFloat(String(value).replace(/[^0-9.]/g, ""));
@@ -41,12 +40,11 @@ export default function CartPopup() {
 
   const handleCheckout = () => {
     if (!isLoggedIn) {
-      alert("Please login to proceed to checkout");
-      navigate("/login");
+      toggleCart();
+      setIsLoginPopupOpen(true);
       return;
     }
     if (cart.length === 0) {
-      alert("Your cart is empty");
       return;
     }
     toggleCart();
@@ -67,7 +65,7 @@ export default function CartPopup() {
           <div className="cart-items">
             {cartItems.map((item, index) => (
               <div className="cart-item" key={item.__key ?? `cart-item-${index}`}>
-                <img src={item.image} alt={item.name} />
+                <img src={item.image} alt={item.name} loading="lazy" />
                 <div>
                   <h4>{item.name}</h4>
 

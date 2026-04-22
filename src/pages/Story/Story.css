@@ -66,10 +66,12 @@
 .story-hero-content p {
   font-size: 1.3rem;
   line-height: 1.8;
+  color: rgba(255, 247, 239, 0.92);
   opacity: 0.95;
   font-weight: 300;
   max-width: 800px;
   margin: 0 auto;
+  text-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
 }
 
 .story-mission {
@@ -416,12 +418,91 @@
 }
 
 @media (max-width: 900px) {
+  .story-mission,
+  .timeline-grid,
+  .values-grid {
+    gap: 18px;
+  }
+
+  .mission-card,
+  .timeline-card,
+  .value-card {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1fr);
+    gap: 10px 18px;
+    align-items: start;
+    padding: 26px 24px;
+  }
+
+  .mission-card::before,
+  .timeline-card::before,
+  .value-card::before {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    width: 4px;
+    height: auto;
+  }
+
+  .mission-card h2,
+  .timeline-card h3,
+  .value-card h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    line-height: 1.25;
+  }
+
+  .mission-card p,
+  .timeline-card p,
+  .value-card p,
+  .mission-card ul {
+    margin: 0;
+  }
+
+  .timeline-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-areas:
+      "year title"
+      "year body";
+  }
+
+  .timeline-year {
+    grid-area: year;
+    margin: 0;
+    align-self: start;
+    padding-top: 2px;
+  }
+
+  .timeline-card h3 {
+    grid-area: title;
+  }
+
+  .timeline-card p {
+    grid-area: body;
+  }
+
   .story-community {
     grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .community-highlights {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .community-highlights div {
+    padding: 20px 14px;
+  }
+
+  .community-highlights strong {
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+  }
+
+  .community-highlights span {
+    font-size: 0.72rem;
   }
 }
 
@@ -443,5 +524,112 @@
   .story-values,
   .story-community {
     padding: 80px 20px;
+  }
+
+  .story-mission {
+    padding: 72px 16px;
+    gap: 14px;
+  }
+
+  .story-timeline,
+  .story-values,
+  .story-community {
+    padding: 64px 16px;
+  }
+
+  .story-timeline h2,
+  .story-values h2 {
+    margin-bottom: 28px;
+    font-size: clamp(1.9rem, 8vw, 2.4rem);
+  }
+
+  .mission-card,
+  .timeline-card,
+  .value-card {
+    grid-template-columns: 94px minmax(0, 1fr);
+    gap: 8px 14px;
+    padding: 18px 16px 18px 18px;
+    border-radius: 14px;
+  }
+
+  .mission-card h2,
+  .timeline-card h3,
+  .value-card h3 {
+    font-size: 1rem;
+  }
+
+  .mission-card p,
+  .timeline-card p,
+  .value-card p,
+  .mission-card li {
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .mission-card ul {
+    padding-left: 18px;
+    line-height: 1.7;
+  }
+
+  .timeline-card {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+
+  .timeline-year {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+  }
+
+  .community-content,
+  .community-cta {
+    padding: 24px 18px;
+    border-radius: 14px;
+  }
+
+  .community-content h2 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+
+  .community-content p,
+  .community-cta p {
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .community-highlights {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    margin: 22px -2px 0;
+    padding: 0 2px 4px;
+    scroll-snap-type: x proximity;
+  }
+
+  .community-highlights div {
+    min-width: 132px;
+    padding: 16px 12px;
+    scroll-snap-align: start;
+  }
+
+  .community-highlights strong {
+    font-size: 1.45rem;
+  }
+
+  .community-highlights span {
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .community-cta h3 {
+    font-size: 1.35rem;
+  }
+
+  .cta-link {
+    font-size: 1rem;
+  }
+
+  .cta-subtext {
+    font-size: 0.84rem;
   }
 }

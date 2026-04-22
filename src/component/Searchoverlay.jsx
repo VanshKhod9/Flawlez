@@ -8,15 +8,17 @@ export default function SearchOverlay({ products }) {
   const [filter, setFilter] = useState("all");
   const { isSearchOpen, setIsSearchOpen } = useContext(CartContext);
   const navigate = useNavigate();
+  const items = Array.isArray(products) ? products : [];
 
-  const filtered = products.filter((p) => {
-    const matchesQuery = p.name.toLowerCase().includes(query.toLowerCase()) ||
-                        p.description.toLowerCase().includes(query.toLowerCase());
+  const filtered = items.filter((p) => {
+    const name = String(p.name || "").toLowerCase();
+    const description = String(p.description || p.shortDescription || "").toLowerCase();
+    const matchesQuery = name.includes(query.toLowerCase()) || description.includes(query.toLowerCase());
     
     if (filter === "all") return matchesQuery;
     if (filter === "popular") return matchesQuery && p.tag === "MOST POPULAR";
     if (filter === "staff-pick") return matchesQuery && p.tag === "STAFF PICK";
-    if (filter === "medium") return matchesQuery && p.description.includes("MEDIUM ROAST");
+    if (filter === "medium") return matchesQuery && description.includes("medium roast");
     
     return matchesQuery;
   });
@@ -74,7 +76,7 @@ export default function SearchOverlay({ products }) {
             <div 
               className="search-item" 
               key={p.id || p.name}
-              onClick={() => handleProductClick(p.id)}
+              onClick={() => handleProductClick(p.slug || p.id)}
             >
               <img src={p.image} alt={p.name} />
               <div>

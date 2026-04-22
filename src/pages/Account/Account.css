@@ -162,11 +162,13 @@
   background-color: rgba(47, 36, 28, 0.08);
 }
 
+.status-paid,
 .status-completed {
   background-color: rgba(51, 130, 63, 0.18);
   color: #1e6b34;
 }
 
+.status-pending,
 .status-pending_payment {
   background-color: rgba(225, 164, 33, 0.18);
   color: #8a5a00;
@@ -361,5 +363,71 @@
 
   .account-panel {
     padding: 24px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .account-page {
+    padding: 40px 18px 100px;
+  }
+
+  .account-panel {
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 720px) {
+  .account-page {
+    padding: 24px 12px 88px;
+  }
+
+  .account-header {
+    margin-bottom: 24px;
+  }
+
+  .account-header h1 {
+    font-size: clamp(1.8rem, 8vw, 2.4rem);
+    letter-spacing: 0.05em;
+  }
+
+  .account-panel {
+    padding: 18px 16px;
+  }
+
+  .account-panel h2,
+  .account-panel h3 {
+    font-size: 1.02rem;
+  }
+
+  .order-card {
+    padding: 16px;
+  }
+
+  .order-items {
+    grid-template-columns: 1fr;
+  }
+
+  .address-card-header,
+  .address-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .primary-btn,
+  .account-logout {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .account-panel {
+    padding: 16px 14px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

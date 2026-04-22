@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { CartContext } from "../context/Cartcontext";
-import { getSubscriptionStatus, subscribeEmail } from "../api";
+import { getAccount, getSubscriptionStatus, subscribeEmail } from "../api";
 import "./EmailSubscriptionPopup.css";
 
 export default function EmailSubscriptionPopup() {
@@ -31,7 +31,7 @@ export default function EmailSubscriptionPopup() {
             if (accountData.username?.includes("@")) {
               setEmail(accountData.username);
             }
-          } catch (err) {
+          } catch {
             // Ignore error
           }
           
@@ -130,4 +130,3 @@ export default function EmailSubscriptionPopup() {
     </div>
   );
 }
-

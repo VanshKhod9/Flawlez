@@ -1,115 +1,169 @@
 import { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../../api";
+import { Link, useNavigate } from "react-router-dom";
+import { login, completeLogin } from "../../api";
 import { CartContext } from "../../context/Cartcontext";
+import { useProducts } from "../../context/ProductContext";
+import OTPWidget from "../../component/OTPWidget";
 import Navbar from "../../component/Navbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
-import "./Login.css";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
+import "./Login.css";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [widgetPhone, setWidgetPhone] = useState("");
   const navigate = useNavigate();
-  const { setIsLoggedIn } = useContext(CartContext);
+  const { setSessionFromToken } = useContext(CartContext);
+  const { products } = useProducts();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setLoading(true);
 
     try {
       const res = await login(username, password);
-
-      if (res.accessToken) {
-        localStorage.setItem("token", res.accessToken);
-        console.log("✅ Login successful, token stored:", res.accessToken.substring(0, 20) + "...");
-        
-        // Set login state - this will trigger cart loading
-        setIsLoggedIn(true);
-        
-        setMessage("Login successful!");
-        
-        // Give cart time to load before navigating
-        setTimeout(() => {
-          navigate("/home");
-        }, 1000);
+      if (res.success) {
+        setWidgetPhone(res.phone);
+        setStep(2);
       } else {
-        setMessage(res.message || "Invalid username or password.");
+        setMessage(res.message || "Invalid credentials.");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      setMessage("Something went wrong. Please try again.");
+      setMessage(error.message || "Unable to login.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleWidgetSuccess = async (data) => {
+    try {
+      const res = await completeLogin(username, data.message);
+      if (res.success) {
+        setSessionFromToken(res.accessToken);
+        navigate(res.user?.isAdmin ? "/admin" : "/home");
+      } else {
+        setMessage(res.message || "Verification failed.");
+        setStep(1);
+      }
+    } catch (error) {
+      setMessage(error.message || "Verification failed.");
+      setStep(1);
+    }
+  };
+
+  const handleWidgetFailure = (error) => {
+    setMessage(error?.message || "OTP verification failed. Please try again.");
+    setStep(1);
   };
 
   return (
     <>
-      {/* Global Components */}
       <Navbar />
       <SubNavbar />
       <CartPopup />
-      <SearchOverlay
-        products={[
-          {
-            name: "SERMON",
-            description: "FRUITY & DECADENT · MEDIUM ROAST",
-            price: "$22.00",
-            image: "/sermon.png",
-          },
-          {
-            name: "STREETLEVEL",
-            description: "SWEET & BALANCED · MEDIUM ROAST",
-            price: "$22.00",
-            image: "/streetlevel.png",
-          },
-          {
-            name: "ASTER",
-            description: "VIBRANT & COMPLEX · MEDIUM ROAST",
-            price: "$22.00",
-            image: "/aster.png",
-          },
-        ]}
-      />
+      <SearchOverlay products={products} />
 
-      {/* Login Form Section */}
-      <div className="login-container">
-        <h2 className="login-title">Account Login</h2>
+      <main className="auth-page">
+        <section className="auth-shell">
+          <div className="auth-intro">
+            <span className="auth-kicker">Flawlez account</span>
+            <h1>Welcome back to a cleaner coffee routine.</h1>
+            <p>
+              Track orders, save addresses, move through checkout faster, and keep your favorite
+              coffees one step away.
+            </p>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <label className="login-label">USERNAME</label>
-          <input
-            type="text"
-            className="login-input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
+            <div className="auth-benefits">
+              <div>
+                <strong>Fast reorders</strong>
+                <span>Pick up where you left off without friction.</span>
+              </div>
+              <div>
+                <strong>Secure verification</strong>
+                <span>Password plus OTP keeps access trusted and simple.</span>
+              </div>
+              <div>
+                <strong>Order visibility</strong>
+                <span>Review payment and shipment details from one place.</span>
+              </div>
+            </div>
+          </div>
 
-          <label className="login-label">PASSWORD</label>
-          <input
-            type="password"
-            className="login-input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="auth-card">
+            <div className="auth-card-head">
+              <span className="auth-step">{step === 1 ? "Step 1 of 2" : "Step 2 of 2"}</span>
+              <h2>Log In</h2>
+              <p>
+                {step === 1
+                  ? "Enter your account details to continue."
+                  : "Verify your phone number to finish signing in."}
+              </p>
+            </div>
 
-          <button type="submit" className="login-button">
-            Login
-          </button>
-        </form>
+            {step === 1 ? (
+              <form onSubmit={handleLogin} className="auth-form">
+                <label className="auth-label">
+                  Username
+                  <input
+                    type="text"
+                    className="auth-input"
+                    value={username}
+                    onChange={(event) => setUsername(event.target.value)}
+                    placeholder="Enter your username"
+                    required
+                    disabled={loading}
+                  />
+                </label>
 
-        {message && <p className="login-message">{message}</p>}
+                <label className="auth-label">
+                  Password
+                  <input
+                    type="password"
+                    className="auth-input"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    disabled={loading}
+                  />
+                </label>
 
-        <p className="login-link">
-          Don’t have an account?{" "}
-          <a href="/signup" className="login-signup-link">
-            Sign Up
-          </a>
-        </p>
-      </div>
+                {message ? <p className="auth-message error">{message}</p> : null}
+
+                <button type="submit" className="auth-primary-btn" disabled={loading}>
+                  {loading ? "Checking..." : "Continue to OTP"}
+                </button>
+
+                <p className="auth-link-row">
+                  New to Flawlez? <Link to="/signup">Create your account</Link>
+                </p>
+              </form>
+            ) : (
+              <div className="auth-otp-panel">
+                <div className="auth-otp-copy">
+                  <p>We’ve sent verification access to {widgetPhone}.</p>
+                </div>
+                <OTPWidget
+                  identifier={widgetPhone}
+                  onSuccess={handleWidgetSuccess}
+                  onFailure={handleWidgetFailure}
+                />
+                {message ? <p className="auth-message error">{message}</p> : null}
+                <button className="auth-secondary-btn" onClick={() => { setStep(1); setMessage(""); }}>
+                  Back to login
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      </main>
       <Footer />
     </>
   );

@@ -1,0 +1,200 @@
+import prisma from "../config/prisma.js";
+
+const slugify = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const normalizeNotes = (notes) => {
+  if (Array.isArray(notes)) {
+    return notes.map((note) => String(note).trim()).filter(Boolean);
+  }
+
+  if (typeof notes === "string") {
+    return notes
+      .split(",")
+      .map((note) => note.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const normalizeTextArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+};
+
+const serializeProduct = (product) => ({
+  ...product,
+  price: Number(product.price),
+  notes: Array.isArray(product.notes) ? product.notes : [],
+  gallery: Array.isArray(product.gallery) ? product.gallery : [product.image].filter(Boolean),
+  benefits: Array.isArray(product.benefits) ? product.benefits : [],
+});
+
+const buildProductData = (payload) => {
+  const slug = slugify(payload.slug || payload.name);
+  const price = Number(payload.price);
+
+  return {
+    slug,
+    name: String(payload.name || "").trim(),
+    shortDescription: String(payload.shortDescription || "").trim(),
+    longDescription: String(payload.longDescription || "").trim() || null,
+    price: Number.isFinite(price) ? price : 0,
+    image: String(payload.image || "").trim(),
+    gallery: normalizeTextArray(payload.gallery),
+    benefits: normalizeTextArray(payload.benefits),
+    tag: String(payload.tag || "").trim() || null,
+    notes: normalizeNotes(payload.notes),
+    roast: String(payload.roast || "").trim() || null,
+    origin: String(payload.origin || "").trim() || null,
+    process: String(payload.process || "").trim() || null,
+    stock: Number.isFinite(Number(payload.stock)) ? Math.max(0, Number(payload.stock)) : 0,
+    featured: Boolean(payload.featured),
+    isActive: payload.isActive !== false,
+  };
+};
+
+const validateProductData = (product) => {
+  if (!product.slug || !product.name || !product.shortDescription || !product.image) {
+    return "Slug, name, short description, and image are required.";
+  }
+
+  if (product.price <= 0) {
+    return "Price must be greater than 0.";
+  }
+
+  if (product.stock < 0) {
+    return "Stock cannot be negative.";
+  }
+
+  return null;
+};
+
+export const listProducts = async (_req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: [{ createdAt: "asc" }],
+    });
+
+    res.json({ success: true, products: products.map(serializeProduct) });
+  } catch (error) {
+    console.error("List products error:", error);
+    res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+export const listAdminProducts = async (_req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      orderBy: [{ updatedAt: "desc" }],
+    });
+
+    res.json({ success: true, products: products.map(serializeProduct) });
+  } catch (error) {
+    console.error("List admin products error:", error);
+    res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+export const getProduct = async (req, res) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { slug: req.params.slug },
+    });
+
+    if (!product || !product.isActive) {
+      return res.status(404).json({ message: "Product not found.", success: false });
+    }
+
+    res.json({ success: true, product: serializeProduct(product) });
+  } catch (error) {
+    console.error("Get product error:", error);
+    res.status(500).json({ message: "Server error", success: false });
+  }
+};
+
+export const createProduct = async (req, res) => {
+  try {
+    const data = buildProductData(req.body);
+    const validationError = validateProductData(data);
+
+    if (validationError) {
+      return res.status(400).json({ message: validationError, success: false });
+    }
+
+    const product = await prisma.product.create({ data });
+
+    res.status(201).json({ success: true, product: serializeProduct(product) });
+  } catch (error) {
+    console.error("Create product error:", error);
+    const message = error.code === "P2002" ? "Slug already exists." : "Server error";
+    res.status(message === "Server error" ? 500 : 400).json({ message, success: false });
+  }
+};
+
+export const updateProduct = async (req, res) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: Number(req.params.id) },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found.", success: false });
+    }
+
+    const data = buildProductData(req.body);
+    const validationError = validateProductData(data);
+
+    if (validationError) {
+      return res.status(400).json({ message: validationError, success: false });
+    }
+
+    const updated = await prisma.product.update({
+      where: { id: product.id },
+      data,
+    });
+
+    res.json({ success: true, product: serializeProduct(updated) });
+  } catch (error) {
+    console.error("Update product error:", error);
+    const message = error.code === "P2002" ? "Slug already exists." : "Server error";
+    res.status(message === "Server error" ? 500 : 400).json({ message, success: false });
+  }
+};
+
+export const deleteProduct = async (req, res) => {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: Number(req.params.id) },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found.", success: false });
+    }
+
+    await prisma.product.delete({
+      where: { id: product.id },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete product error:", error);
+    res.status(500).json({ message: "Server error", success: false });
+  }
+};

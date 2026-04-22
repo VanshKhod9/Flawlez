@@ -1,36 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext } from "react";
 import { Navigate } from "react-router-dom";
+import { CartContext } from "../context/Cartcontext";
+import { getStoredSession } from "./session";
 
-export default function ProtectedRoute({ children }) {
-  const [isChecking, setIsChecking] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export default function ProtectedRoute({ children, requireAdmin = false }) {
+  const { currentUser } = useContext(CartContext);
+  const session = currentUser ? { user: currentUser } : getStoredSession();
 
-  useEffect(() => {
-    // simulate checking localStorage token (like a short delay)
-    const token = localStorage.getItem("token");
-    console.log("ProtectedRoute token:", token);
-    if (token) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-    // Add a short delay so React finishes updating before redirecting
-    const timer = setTimeout(() => {
-      setIsChecking(false);
-    }, 100); // 100ms delay fixes the blink
-    return () => clearTimeout(timer);
-  }, []);
-
-  // While checking, return nothing (prevents flicker)
-  if (isChecking) {
-    return null;
-  }
-
-  // If no token → go back to login
-  if (!isAuthenticated) {
+  if (!session?.user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Otherwise render the protected page
+  if (requireAdmin && !session.user.isAdmin) {
+    return <Navigate to="/account" replace />;
+  }
+
   return children;
 }

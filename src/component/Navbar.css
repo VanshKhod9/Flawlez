@@ -1,0 +1,129 @@
+.navbar-container {
+  height: 108px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #f7f1e9;
+  border-bottom: 1px solid #e6ddd2;
+}
+
+.navbar-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-icons {
+  position: absolute;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.Login-logo {
+  width: 120px;
+  height: auto;
+}
+
+.navbar-icon-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.logoo {
+  width: 30px;
+  height: 30px;
+  transition: transform 0.2s ease;
+}
+
+.logoo:hover {
+  transform: scale(1.06);
+}
+
+.navbar-admin-btn {
+  border: 1px solid #2c1810;
+  border-radius: 999px;
+  background: transparent;
+  color: #2c1810;
+  padding: 7px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cart-icon-wrapper {
+  position: relative;
+}
+
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #6b3f29;
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .navbar-container {
+    height: 92px;
+    padding: 0 14px;
+    justify-content: flex-start;
+  }
+
+  .navbar-icons {
+    right: 14px;
+    gap: 10px;
+  }
+
+  .Login-logo {
+    width: 98px;
+  }
+
+  .logoo {
+    width: 26px;
+    height: 26px;
+  }
+
+  .navbar-admin-btn {
+    padding: 6px 11px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-container {
+    height: 84px;
+    padding: 0 12px;
+  }
+
+  .navbar-icons {
+    right: 12px;
+    gap: 8px;
+  }
+
+  .Login-logo {
+    width: 88px;
+  }
+
+  .logoo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .navbar-admin-btn {
+    padding: 5px 9px;
+    font-size: 0.7rem;
+  }
+}
