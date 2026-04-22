@@ -3,31 +3,60 @@ import bcrypt from "bcryptjs";
 import prisma from "../config/prisma.js";
 import { isAdminUsername, issueAccessToken, normalizePhone } from "../utils/auth.js";
 
+const MSG91_SERVER_CONFIG_ERROR =
+  "Server OTP verification is not configured. Add MSG91_AUTH_KEY on the backend.";
+const MSG91_SERVER_AUTH_ERROR =
+  "Server OTP verification failed. Check MSG91_AUTH_KEY on the backend.";
+const MSG91_SERVER_VERIFY_ERROR = "Unable to verify OTP with MSG91. Please try again.";
+const SERVER_AUTH_CONFIG_ERROR =
+  "Server authentication is not configured. Add ACCESS_TOKEN_SECRET on the backend.";
+const DATABASE_UNAVAILABLE_ERROR = "Database is temporarily unavailable. Please try again.";
+
 const verifyMsg91AccessToken = async (accessToken) => {
   if (!process.env.MSG91_AUTH_KEY) {
-    throw new Error("MSG91 is not configured on the server");
+    throw new Error(MSG91_SERVER_CONFIG_ERROR);
   }
 
-  const response = await fetch("https://control.msg91.com/api/v5/widget/verifyAccessToken", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify({
-      authkey: process.env.MSG91_AUTH_KEY,
-      "access-token": accessToken,
-    }),
-  });
+  let response;
+
+  try {
+    response = await fetch("https://control.msg91.com/api/v5/widget/verifyAccessToken", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        authkey: process.env.MSG91_AUTH_KEY,
+        "access-token": accessToken,
+      }),
+    });
+  } catch (error) {
+    throw new Error(MSG91_SERVER_VERIFY_ERROR);
+  }
+
+  const rawText = await response.text();
+  let data = {};
+
+  try {
+    data = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error("Unable to verify OTP with MSG91");
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(MSG91_SERVER_AUTH_ERROR);
+    }
+
+    const description =
+      data?.message || data?.error || data?.description || data?.errors?.[0]?.message || "";
+
+    throw new Error(description || MSG91_SERVER_VERIFY_ERROR);
   }
 
-  const data = await response.json();
-
   if (data.type !== "success") {
-    throw new Error("OTP verification failed");
+    throw new Error(data?.message || data?.error || "OTP verification failed");
   }
 
   return data;
@@ -45,6 +74,40 @@ const getConflictMessage = (users, username, phone) => {
   }
 
   return "";
+};
+
+const getAuthErrorResponse = (error) => {
+  if (
+    error.message === "OTP verification failed" ||
+    error.name === "RegisterConflict" ||
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  ) {
+    return {
+      status: 400,
+      message:
+        error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+          ? "Username or phone number is already registered."
+          : error.message,
+    };
+  }
+
+  if (
+    error.message === MSG91_SERVER_CONFIG_ERROR ||
+    error.message === MSG91_SERVER_AUTH_ERROR ||
+    error.message === MSG91_SERVER_VERIFY_ERROR ||
+    error.message === SERVER_AUTH_CONFIG_ERROR
+  ) {
+    return { status: 500, message: error.message };
+  }
+
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P1001" || error.code === "P2024")
+  ) {
+    return { status: 503, message: DATABASE_UNAVAILABLE_ERROR };
+  }
+
+  return { status: 500, message: "Server error" };
 };
 
 export const register = async (req, res) => {
@@ -84,7 +147,8 @@ export const register = async (req, res) => {
     res.json({ success: true, phone: normalizedPhone });
   } catch (error) {
     console.error("Register error:", error);
-    res.status(500).json({ message: "Server error", success: false });
+    const { status, message } = getAuthErrorResponse(error);
+    res.status(status).json({ message, success: false });
   }
 };
 
@@ -159,13 +223,8 @@ export const completeRegister = async (req, res) => {
     });
   } catch (error) {
     console.error("Complete register error:", error);
-    const message =
-      error.message === "OTP verification failed" || error.name === "RegisterConflict"
-        ? error.message
-        : error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
-          ? "Username or phone number is already registered."
-          : "Server error";
-    res.status(message === "Server error" ? 500 : 400).json({ message, success: false });
+    const { status, message } = getAuthErrorResponse(error);
+    res.status(status).json({ message, success: false });
   }
 };
 
@@ -202,7 +261,8 @@ export const login = async (req, res) => {
     res.json({ success: true, phone: user.phone });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error", success: false });
+    const { status, message } = getAuthErrorResponse(error);
+    res.status(status).json({ message, success: false });
   }
 };
 
@@ -247,8 +307,8 @@ export const completeLogin = async (req, res) => {
     });
   } catch (error) {
     console.error("Complete login error:", error);
-    const message = error.message === "OTP verification failed" ? error.message : "Server error";
-    res.status(message === "Server error" ? 500 : 400).json({ message, success: false });
+    const { status, message } = getAuthErrorResponse(error);
+    res.status(status).json({ message, success: false });
   }
 };
 
