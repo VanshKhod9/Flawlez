@@ -33,7 +33,7 @@ const editorialNotes = [
 
 export default function Home() {
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
+  const { cart, addToCart, updateQuantity, getItemKey } = useContext(CartContext);
   const { products, loading, error } = useProducts();
   const [filter, setFilter] = useState("all");
 
@@ -57,6 +57,18 @@ export default function Home() {
 
     return products;
   }, [filter, products]);
+
+  const cartQuantities = useMemo(() => {
+    return cart.reduce((lookup, item) => {
+      const key = getItemKey(item);
+      if (!key) {
+        return lookup;
+      }
+
+      lookup[key] = Number(item.quantity) || 0;
+      return lookup;
+    }, {});
+  }, [cart, getItemKey]);
 
   return (
     <>
@@ -190,9 +202,47 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <button className="add-btn" onClick={() => addToCart(product)} disabled={product.stock <= 0}>
-                    {product.stock > 0 ? "Add to Cart" : "Sold Out"}
-                  </button>
+                  {(() => {
+                    const productKey = getItemKey(product);
+                    const quantityInCart = productKey ? cartQuantities[productKey] || 0 : 0;
+
+                    if (product.stock <= 0) {
+                      return (
+                        <button className="add-btn" disabled>
+                          Sold Out
+                        </button>
+                      );
+                    }
+
+                    if (quantityInCart > 0) {
+                      return (
+                        <div className="product-quantity-control" aria-label={`${product.name} quantity controls`}>
+                          <button
+                            className="qty-action"
+                            onClick={() => updateQuantity(productKey, quantityInCart - 1)}
+                            aria-label={`Decrease ${product.name} quantity`}
+                          >
+                            -
+                          </button>
+                          <span className="qty-value">{quantityInCart}</span>
+                          <button
+                            className="qty-action"
+                            onClick={() => updateQuantity(productKey, quantityInCart + 1)}
+                            aria-label={`Increase ${product.name} quantity`}
+                            disabled={quantityInCart >= product.stock}
+                          >
+                            +
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button className="add-btn" onClick={() => addToCart(product)}>
+                        Add to Cart
+                      </button>
+                    );
+                  })()}
                 </article>
               ))}
             </div>
