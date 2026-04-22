@@ -64,7 +64,9 @@ const OTPWidget = ({ identifier, onSuccess, onFailure }) => {
 
     if (!WIDGET_ID || !TOKEN_AUTH) {
       failureRef.current?.(
-        new Error("MSG91 widget is not configured. Add VITE_MSG91_WIDGET_ID and VITE_MSG91_TOKEN_AUTH.")
+        new Error(
+          "MSG91 widget is not configured in this frontend build. Add VITE_MSG91_WIDGET_ID and VITE_MSG91_TOKEN_AUTH to your deployment environment, then rebuild/redeploy."
+        )
       );
       return;
     }
