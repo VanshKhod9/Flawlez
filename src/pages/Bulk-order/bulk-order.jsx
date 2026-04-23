@@ -69,11 +69,17 @@ export default function BulkOrder() {
       <main className="bulk-page">
         <section className="bulk-hero">
           <div className="bulk-hero-content">
+            <span className="bulk-kicker">Flawlez Wholesale</span>
             <h1>Wholesale coffee, roasted just for you</h1>
             <p>
               Partner with our roasting team for consistent quality, flexible profiles, and training
               programs tailored to your business.
             </p>
+            <div className="bulk-hero-points">
+              <span>Custom roast profiles</span>
+              <span>Barista training support</span>
+              <span>Pan-India dispatch</span>
+            </div>
           </div>
         </section>
 
@@ -88,6 +94,7 @@ export default function BulkOrder() {
 
         <section className="bulk-order-types">
           <div className="order-types-content">
+            <span className="bulk-section-kicker">Wholesale partners</span>
             <h2>Who we serve</h2>
             <p>
               Whether you&apos;re brewing hundreds of cups a day or curating a boutique coffee menu,
@@ -100,6 +107,7 @@ export default function BulkOrder() {
             </ul>
           </div>
           <div className="order-support">
+            <span className="bulk-section-kicker">Included support</span>
             <h3>Wholesale support includes</h3>
             <ul>
               <li>Custom roast profiles (espresso & filter)</li>
@@ -113,6 +121,7 @@ export default function BulkOrder() {
 
         <section className="bulk-form-section">
           <div className="form-header">
+            <span className="bulk-section-kicker">Get started</span>
             <h2>Start your wholesale journey</h2>
             <p>
               Share a few details and our team will reach out within one business day with samples,
@@ -214,6 +223,7 @@ export default function BulkOrder() {
 
         <section className="bulk-cta">
           <div>
+            <span className="bulk-section-kicker">Direct contact</span>
             <h3>Prefer a quick chat?</h3>
             <p>Call us on <a href="tel:+919845612345">+91 98456 12345</a> or drop a note at{" "}
               <a href="mailto:partners@coffeecollective.in">partners@coffeecollective.in</a>.
