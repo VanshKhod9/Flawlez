@@ -9,6 +9,7 @@ import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
 import { CartContext } from "../../context/Cartcontext";
 import { useProducts } from "../../context/ProductContext";
+import "../Auth/Auth.css";
 import "./Signup.css";
 
 export default function Signup() {

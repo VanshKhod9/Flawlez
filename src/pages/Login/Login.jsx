@@ -9,6 +9,7 @@ import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
+import "../Auth/Auth.css";
 import "./Login.css";
 
 export default function Login() {
