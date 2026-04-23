@@ -31,7 +31,12 @@ const editorialNotes = [
   },
 ];
 
-const fallbackHeroImages = ["/12-Photoroom.png", "/21-Photoroom.png", "/Flawlez3.png", "/Flawlez4.png"];
+const fallbackHeroImages = [
+  "/hero-showcase/flawlez-showcase-1.png",
+  "/hero-showcase/flawlez-showcase-2.png",
+  "/hero-showcase/flawlez-showcase-3.png",
+  "/hero-showcase/flawlez-showcase-4.png",
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -66,23 +71,7 @@ export default function Home() {
     [products]
   );
 
-  const heroFallbackSlides = useMemo(() => {
-    const seen = new Set();
-    const productImages = products
-      .flatMap((product) => [product.image, ...(Array.isArray(product.gallery) ? product.gallery : [])])
-      .map((image) => String(image || "").trim())
-      .filter((image) => {
-        if (!image || seen.has(image)) {
-          return false;
-        }
-
-        seen.add(image);
-        return true;
-      })
-      .slice(0, 4);
-
-    return productImages.length > 0 ? productImages : fallbackHeroImages;
-  }, [products]);
+  const heroFallbackSlides = fallbackHeroImages;
 
   useEffect(() => {
     setFallbackSlideIndex(0);
@@ -184,18 +173,27 @@ export default function Home() {
             ) : (
               <div className="hero-empty-state">
                 <span>Flawlez Showcase</span>
-                <strong>A rotating look at the coffee, packaging, and details shaping the Flawlez shelf.</strong>
+                <strong>A closer look at the Flawlez jar, the pour, and the warm everyday ritual around each cup.</strong>
                 <p>
-                  Signature roasts, fresh drops, and standout bags will live here as your featured
-                  collection grows.
+                  From label details to fresh pours and ready-to-drink moments, this showcase brings
+                  the product experience to life before the first sip.
                 </p>
                 <div className="hero-empty-slider" aria-label="Flawlez coffee preview slideshow">
-                  <div className="hero-empty-slider-frame">
-                    <img
-                      src={heroFallbackSlides[fallbackSlideIndex]}
-                      alt="Flawlez coffee preview"
-                      loading="lazy"
-                    />
+                  <div className="hero-empty-slider-viewport">
+                    <div
+                      className="hero-empty-slider-track"
+                      style={{ transform: `translate3d(-${fallbackSlideIndex * 100}%, 0, 0)` }}
+                    >
+                      {heroFallbackSlides.map((image, index) => (
+                        <div className="hero-empty-slide" key={`${image}-${index}`}>
+                          <img
+                            src={image}
+                            alt={`Flawlez coffee preview ${index + 1}`}
+                            loading="lazy"
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <div className="hero-empty-slider-dots">
                     {heroFallbackSlides.map((image, index) => (
