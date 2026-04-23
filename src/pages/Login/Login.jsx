@@ -80,102 +80,124 @@ export default function Login() {
       <main className="auth-page">
         <section className="auth-shell">
           <div className="auth-intro">
-            <span className="auth-kicker">Flawlez account</span>
-            <h1>Welcome back to a cleaner coffee routine.</h1>
-            <p>
-              Track orders, save addresses, move through checkout faster, and keep your favorite
-              coffees one step away.
-            </p>
+            <div className="auth-intro-copy">
+              <span className="auth-kicker">Flawlez account</span>
+              <h1>Welcome back to a cleaner coffee routine.</h1>
+              <p>
+                Track orders, save addresses, move through checkout faster, and keep your favorite
+                coffees one step away.
+              </p>
 
-            <div className="auth-benefits">
-              <div>
-                <strong>Fast reorders</strong>
-                <span>Pick up where you left off without friction.</span>
+              <div className="auth-benefits">
+                <div>
+                  <strong>Fast reorders</strong>
+                  <span>Pick up where you left off without friction.</span>
+                </div>
+                <div>
+                  <strong>Secure access</strong>
+                  <span>Use Google or password plus OTP based login.</span>
+                </div>
+                <div>
+                  <strong>Order visibility</strong>
+                  <span>Review payment and shipment details from one place.</span>
+                </div>
               </div>
-              <div>
-                <strong>Secure verification</strong>
-                <span>Password plus OTP keeps access trusted and simple.</span>
-              </div>
-              <div>
-                <strong>Order visibility</strong>
-                <span>Review payment and shipment details from one place.</span>
+
+              <div className="auth-intro-note">
+                <strong>Account perks</strong>
+                <p>
+                  Built for repeat buyers who want fewer steps, clearer tracking, and smoother
+                  checkout every time they come back to Flawlez.
+                </p>
               </div>
             </div>
           </div>
 
           <div className="auth-card">
-            <div className="auth-card-head">
-              <span className="auth-step">{step === 1 ? "Step 1 of 2" : "Step 2 of 2"}</span>
-              <h2>Log In</h2>
-              <p>
-                {step === 1
-                  ? "Enter your account details to continue."
-                  : "Verify your phone number to finish signing in."}
-              </p>
-            </div>
-
-            {step === 1 ? (
-              <>
-                <GoogleAuthButton
-                  buttonText="signin_with"
-                  dividerLabel="or continue with"
-                  onAuthSuccess={handleGoogleSuccess}
-                />
-
-                <form onSubmit={handleLogin} className="auth-form">
-                  <label className="auth-label">
-                    Username
-                    <input
-                      type="text"
-                      className="auth-input"
-                      value={username}
-                      onChange={(event) => setUsername(event.target.value)}
-                      placeholder="Enter your username"
-                      required
-                      disabled={loading}
-                    />
-                  </label>
-
-                  <label className="auth-label">
-                    Password
-                    <input
-                      type="password"
-                      className="auth-input"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      placeholder="Enter your password"
-                      required
-                      disabled={loading}
-                    />
-                  </label>
-
-                  {message ? <p className="auth-message error">{message}</p> : null}
-
-                  <button type="submit" className="auth-primary-btn" disabled={loading}>
-                    {loading ? "Checking..." : "Continue to OTP"}
-                  </button>
-
-                  <p className="auth-link-row">
-                    New to Flawlez? <Link to="/signup">Create your account</Link>
-                  </p>
-                </form>
-              </>
-            ) : (
-              <div className="auth-otp-panel">
-                <div className="auth-otp-copy">
-                  <p>We’ve sent verification access to {widgetPhone}.</p>
+            <div className="auth-card-shell">
+              <div className="auth-card-head">
+                <span className="auth-step">{step === 1 ? "Step 1 of 2" : "Step 2 of 2"}</span>
+                <div className="auth-card-meta">
+                  <span className="auth-card-pill">Google available</span>
+                  <span className="auth-card-pill muted">OTP protected</span>
                 </div>
-                <OTPWidget
-                  identifier={widgetPhone}
-                  onSuccess={handleWidgetSuccess}
-                  onFailure={handleWidgetFailure}
-                />
-                {message ? <p className="auth-message error">{message}</p> : null}
-                <button className="auth-secondary-btn" onClick={() => { setStep(1); setMessage(""); }}>
-                  Back to login
-                </button>
+                <h2>Log In</h2>
+                <p>
+                  {step === 1
+                    ? "Sign in with Google or continue with your account details below."
+                    : "Verify your phone number to finish signing in."}
+                </p>
               </div>
-            )}
+
+              {step === 1 ? (
+                <>
+                  <GoogleAuthButton
+                    buttonText="signin_with"
+                    dividerLabel="preferred sign in"
+                    onAuthSuccess={handleGoogleSuccess}
+                  />
+
+                  <form onSubmit={handleLogin} className="auth-form">
+                    <label className="auth-label">
+                      Username
+                      <input
+                        type="text"
+                        className="auth-input"
+                        value={username}
+                        onChange={(event) => setUsername(event.target.value)}
+                        placeholder="Enter your username"
+                        required
+                        disabled={loading}
+                      />
+                      <span className="auth-label-hint">Use the same username tied to your account.</span>
+                    </label>
+
+                    <label className="auth-label">
+                      Password
+                      <input
+                        type="password"
+                        className="auth-input"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Enter your password"
+                        required
+                        disabled={loading}
+                      />
+                      <span className="auth-label-hint">Your second step stays protected through OTP.</span>
+                    </label>
+
+                    {message ? <p className="auth-message error">{message}</p> : null}
+
+                    <button type="submit" className="auth-primary-btn" disabled={loading}>
+                      {loading ? "Checking..." : "Continue to OTP"}
+                    </button>
+
+                    <p className="auth-form-footnote">
+                      Google is the fastest route. Password login keeps your existing account flow intact.
+                    </p>
+
+                    <p className="auth-link-row">
+                      New to Flawlez? <Link to="/signup">Create your account</Link>
+                    </p>
+                  </form>
+                </>
+              ) : (
+                <div className="auth-otp-panel">
+                  <div className="auth-otp-copy">
+                    <p>We’ve sent verification access to {widgetPhone}.</p>
+                  </div>
+                  <OTPWidget
+                    identifier={widgetPhone}
+                    onSuccess={handleWidgetSuccess}
+                    onFailure={handleWidgetFailure}
+                  />
+                  {message ? <p className="auth-message error">{message}</p> : null}
+                  <button className="auth-secondary-btn" onClick={() => { setStep(1); setMessage(""); }}>
+                    Back to login
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </main>
