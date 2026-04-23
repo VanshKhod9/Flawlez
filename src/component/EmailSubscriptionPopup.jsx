@@ -1,14 +1,58 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useCallback } from "react";
 import { CartContext } from "../context/Cartcontext";
 import { getAccount, getSubscriptionStatus, subscribeEmail } from "../api";
 import "./EmailSubscriptionPopup.css";
 
+const EMAIL_POPUP_SNOOZE_MS = 1000 * 60 * 60 * 24 * 7;
+
 export default function EmailSubscriptionPopup() {
-  const { isLoggedIn } = useContext(CartContext);
+  const { isLoggedIn, currentUser } = useContext(CartContext);
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  const getDismissKey = useCallback(() => {
+    const username = String(currentUser?.username || "").trim().toLowerCase();
+    return username ? `flawlez-email-popup-dismissed:${username}` : null;
+  }, [currentUser?.username]);
+
+  const isDismissedRecently = useCallback(() => {
+    const dismissKey = getDismissKey();
+    if (!dismissKey) {
+      return false;
+    }
+
+    const rawValue = localStorage.getItem(dismissKey);
+    const dismissedAt = Number(rawValue);
+
+    if (!rawValue || Number.isNaN(dismissedAt)) {
+      return false;
+    }
+
+    if (Date.now() - dismissedAt < EMAIL_POPUP_SNOOZE_MS) {
+      return true;
+    }
+
+    localStorage.removeItem(dismissKey);
+    return false;
+  }, [getDismissKey]);
+
+  const markDismissed = useCallback(() => {
+    const dismissKey = getDismissKey();
+    if (!dismissKey) {
+      return;
+    }
+
+    localStorage.setItem(dismissKey, String(Date.now()));
+  }, [getDismissKey]);
+
+  const clearDismissed = useCallback(() => {
+    const dismissKey = getDismissKey();
+    if (dismissKey) {
+      localStorage.removeItem(dismissKey);
+    }
+  }, [getDismissKey]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -19,25 +63,36 @@ export default function EmailSubscriptionPopup() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
+    let isActive = true;
+    let timeoutId;
+
     const checkAndShowPopup = async () => {
       try {
+        if (isDismissedRecently()) {
+          return;
+        }
+
         const status = await getSubscriptionStatus(token);
-        
+
         // Only show if NOT subscribed
         if (!status.isSubscribed) {
           // Pre-fill email from username if it's an email
           try {
             const accountData = await getAccount(token);
-            if (accountData.username?.includes("@")) {
-              setEmail(accountData.username);
+            const preferredEmail =
+              accountData.user?.email ||
+              (accountData.user?.username?.includes("@") ? accountData.user.username : "");
+
+            if (preferredEmail && isActive) {
+              setEmail(preferredEmail);
             }
           } catch {
             // Ignore error
           }
-          
+
           // Show popup after 2 seconds
-          setTimeout(() => {
-            if (localStorage.getItem("token")) {
+          timeoutId = setTimeout(() => {
+            if (isActive && localStorage.getItem("token")) {
               setIsOpen(true);
             }
           }, 2000);
@@ -48,9 +103,17 @@ export default function EmailSubscriptionPopup() {
     };
 
     checkAndShowPopup();
-  }, [isLoggedIn]);
+
+    return () => {
+      isActive = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [currentUser?.username, isDismissedRecently, isLoggedIn]);
 
   const handleClose = () => {
+    markDismissed();
     setIsOpen(false);
   };
 
@@ -71,10 +134,11 @@ export default function EmailSubscriptionPopup() {
       }
 
       const response = await subscribeEmail(token, email);
-      
+
       if (response.success) {
+        clearDismissed();
         setSubmitted(true);
-        
+
         // Close popup after showing success
         setTimeout(() => {
           setIsOpen(false);
