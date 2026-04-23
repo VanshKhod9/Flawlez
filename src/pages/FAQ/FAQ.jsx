@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import { CartContext } from "../../context/Cartcontext";
-import { addReview, updateReview, deleteReview } from "../../api";
+import { API_URL, addReview, updateReview, deleteReview } from "../../api";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
@@ -50,7 +50,7 @@ export default function FAQ() {
   const loadReviews = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/reviews`, {
+      const res = await fetch(`${API_URL}/reviews`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
