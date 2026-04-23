@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/Cartcontext";
 import { useProducts } from "../../context/ProductContext";
@@ -31,11 +31,14 @@ const editorialNotes = [
   },
 ];
 
+const fallbackHeroImages = ["/12-Photoroom.png", "/21-Photoroom.png", "/Flawlez3.png", "/Flawlez4.png"];
+
 export default function Home() {
   const navigate = useNavigate();
   const { cart, addToCart, updateQuantity, getItemKey } = useContext(CartContext);
   const { products, loading, error } = useProducts();
   const [filter, setFilter] = useState("all");
+  const [fallbackSlideIndex, setFallbackSlideIndex] = useState(0);
 
   const buildCatalogCartItem = (product) => {
     const weight = String(product.weight || "").trim();
@@ -62,6 +65,40 @@ export default function Home() {
     () => products.filter((product) => product.featured).slice(0, 3),
     [products]
   );
+
+  const heroFallbackSlides = useMemo(() => {
+    const seen = new Set();
+    const productImages = products
+      .flatMap((product) => [product.image, ...(Array.isArray(product.gallery) ? product.gallery : [])])
+      .map((image) => String(image || "").trim())
+      .filter((image) => {
+        if (!image || seen.has(image)) {
+          return false;
+        }
+
+        seen.add(image);
+        return true;
+      })
+      .slice(0, 4);
+
+    return productImages.length > 0 ? productImages : fallbackHeroImages;
+  }, [products]);
+
+  useEffect(() => {
+    setFallbackSlideIndex(0);
+  }, [heroFallbackSlides]);
+
+  useEffect(() => {
+    if (heroFallbackSlides.length < 2) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setFallbackSlideIndex((current) => (current + 1) % heroFallbackSlides.length);
+    }, 3200);
+
+    return () => window.clearInterval(intervalId);
+  }, [heroFallbackSlides]);
 
   const visibleProducts = useMemo(() => {
     if (filter === "featured") {
@@ -146,12 +183,32 @@ export default function Home() {
               ))
             ) : (
               <div className="hero-empty-state">
-                <span>Curated lineup</span>
-                <strong>Products will appear here once your featured catalogue is live.</strong>
+                <span>Flawlez Showcase</span>
+                <strong>A rotating look at the coffee, packaging, and details shaping the Flawlez shelf.</strong>
                 <p>
-                  You can manage which coffees appear in this area from the admin panel whenever
-                  you update featured stock.
+                  Signature roasts, fresh drops, and standout bags will live here as your featured
+                  collection grows.
                 </p>
+                <div className="hero-empty-slider" aria-label="Flawlez coffee preview slideshow">
+                  <div className="hero-empty-slider-frame">
+                    <img
+                      src={heroFallbackSlides[fallbackSlideIndex]}
+                      alt="Flawlez coffee preview"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="hero-empty-slider-dots">
+                    {heroFallbackSlides.map((image, index) => (
+                      <button
+                        key={`${image}-${index}`}
+                        type="button"
+                        className={index === fallbackSlideIndex ? "active" : ""}
+                        onClick={() => setFallbackSlideIndex(index)}
+                        aria-label={`Show preview ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
