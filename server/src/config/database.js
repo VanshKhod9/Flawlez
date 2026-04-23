@@ -37,8 +37,10 @@ export async function initializeTables() {
         name VARCHAR(255) NOT NULL,
         short_description TEXT NOT NULL,
         long_description TEXT,
+        weight VARCHAR(255),
         price DECIMAL(10, 2) NOT NULL,
         image TEXT NOT NULL,
+        secondary_image TEXT,
         gallery JSONB,
         benefits JSONB,
         tag VARCHAR(255),
@@ -75,10 +77,18 @@ export async function initializeTables() {
 
     await prisma.$executeRaw`
       ALTER TABLE products
+      ADD COLUMN IF NOT EXISTS weight VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS secondary_image TEXT,
       ADD COLUMN IF NOT EXISTS gallery JSONB,
       ADD COLUMN IF NOT EXISTS benefits JSONB,
       ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 50,
       ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT false
+    `;
+
+    await prisma.$executeRaw`
+      UPDATE products
+      SET weight = '250g'
+      WHERE weight IS NULL OR TRIM(weight) = ''
     `;
 
     await prisma.$executeRaw`

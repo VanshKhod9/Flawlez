@@ -397,7 +397,11 @@ export default function Checkout() {
                   <img src={item.image} alt={item.name} loading="lazy" />
                   <div className="order-item-details">
                     <h4>{item.name}</h4>
-                    <p>{item.selectedSize || "250g"} • {item.selectedGrind || "Whole Bean"}</p>
+                    <p>
+                      {[item.selectedWeight || item.weight || item.selectedSize, item.selectedGrind || "Whole Bean"]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </p>
                     <p>Quantity: {item.quantity}</p>
                     <p className="order-item-price">
                       ₹{(parsePrice(item.price) * Number(item.quantity || 1)).toFixed(2)}

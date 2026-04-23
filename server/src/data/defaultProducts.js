@@ -5,8 +5,10 @@ export const DEFAULT_PRODUCTS = [
     shortDescription: "FRUITY & DECADENT · MEDIUM ROAST",
     longDescription:
       "A vibrant cup built for clean sweetness, jammy fruit, and a chocolatey finish that stays elegant on espresso or pour-over.",
+    weight: "250g",
     price: 550,
     image: "/12-Photoroom.png",
+    secondaryImage: "/Flawlez4.png",
     gallery: ["/12-Photoroom.png", "/Flawlez4.png", "/Flawlez3.png"],
     benefits: ["Roasted fresh", "Best for filter", "Ships pan-India"],
     tag: "MOST POPULAR",
@@ -24,8 +26,10 @@ export const DEFAULT_PRODUCTS = [
     shortDescription: "SWEET & BALANCED · MEDIUM ROAST",
     longDescription:
       "A daily-driver blend with caramel sweetness, round citrus, and enough structure to work beautifully with milk.",
+    weight: "250g",
     price: 520,
     image: "/21-Photoroom.png",
+    secondaryImage: "/Flawlez1.png",
     gallery: ["/21-Photoroom.png", "/Flawlez1.png", "/Flawlez4.png"],
     benefits: ["Easy everyday brew", "Espresso-friendly", "Balanced sweetness"],
     tag: "",
@@ -43,8 +47,10 @@ export const DEFAULT_PRODUCTS = [
     shortDescription: "VIBRANT & COMPLEX · MEDIUM ROAST",
     longDescription:
       "Floral aromatics, layered acidity, and a tea-like finish for customers who want a brighter, more expressive brew.",
+    weight: "250g",
     price: 540,
     image: "/12-Photoroom.png",
+    secondaryImage: "/Flawlez3.png",
     gallery: ["/12-Photoroom.png", "/Flawlez3.png", "/Flawlez5.png"],
     benefits: ["Complex aromatics", "Great for pour-over", "Limited small-batch roast"],
     tag: "STAFF PICK",

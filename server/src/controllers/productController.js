@@ -37,26 +37,53 @@ const normalizeTextArray = (value) => {
   return [];
 };
 
+const buildGallery = (product) => {
+  const seen = new Set();
+  const images = [product.image, product.secondaryImage];
+  const extras = Array.isArray(product.gallery) ? product.gallery : [];
+
+  return [...images, ...extras]
+    .map((item) => String(item || "").trim())
+    .filter((item) => {
+      if (!item || seen.has(item)) {
+        return false;
+      }
+
+      seen.add(item);
+      return true;
+    });
+};
+
 const serializeProduct = (product) => ({
   ...product,
   price: Number(product.price),
+  weight: String(product.weight || "").trim(),
+  secondaryImage: String(product.secondaryImage || "").trim(),
   notes: Array.isArray(product.notes) ? product.notes : [],
-  gallery: Array.isArray(product.gallery) ? product.gallery : [product.image].filter(Boolean),
+  gallery: buildGallery(product),
   benefits: Array.isArray(product.benefits) ? product.benefits : [],
 });
 
 const buildProductData = (payload) => {
-  const slug = slugify(payload.slug || payload.name);
+  const weight = String(payload.weight || "250g").trim();
+  const slug = slugify(payload.slug || [payload.name, weight].filter(Boolean).join(" "));
   const price = Number(payload.price);
+  const image = String(payload.image || "").trim();
+  const secondaryImage = String(payload.secondaryImage || "").trim();
+  const gallery = normalizeTextArray(payload.gallery).filter(
+    (item) => item !== image && item !== secondaryImage
+  );
 
   return {
     slug,
     name: String(payload.name || "").trim(),
     shortDescription: String(payload.shortDescription || "").trim(),
     longDescription: String(payload.longDescription || "").trim() || null,
+    weight: weight || null,
     price: Number.isFinite(price) ? price : 0,
-    image: String(payload.image || "").trim(),
-    gallery: normalizeTextArray(payload.gallery),
+    image,
+    secondaryImage: secondaryImage || null,
+    gallery,
     benefits: normalizeTextArray(payload.benefits),
     tag: String(payload.tag || "").trim() || null,
     notes: normalizeNotes(payload.notes),
@@ -70,8 +97,8 @@ const buildProductData = (payload) => {
 };
 
 const validateProductData = (product) => {
-  if (!product.slug || !product.name || !product.shortDescription || !product.image) {
-    return "Slug, name, short description, and image are required.";
+  if (!product.slug || !product.name || !product.weight || !product.shortDescription || !product.image) {
+    return "Slug, name, weight, short description, and image are required.";
   }
 
   if (product.price <= 0) {

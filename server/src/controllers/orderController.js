@@ -17,12 +17,6 @@ const requiredShippingFields = [
   "country",
 ];
 
-const sizeMultipliers = {
-  "250g": 1,
-  "500g": 1.9,
-  "1kg": 3.5,
-};
-
 const roundCurrency = (value) => Number(Number(value).toFixed(2));
 
 const normalizeOrderResponse = (order) => ({
@@ -73,27 +67,31 @@ const normalizeCartItems = async (cart) => {
     }
 
     const quantity = Math.max(1, Number(item.quantity) || 1);
-    const selectedSize = item.selectedSize || "250g";
+    const selectedWeight = String(item.selectedWeight || item.selectedSize || product.weight || "").trim();
     const selectedGrind = item.selectedGrind || "Whole Bean";
-    const multiplier = sizeMultipliers[selectedSize] || 1;
-    const unitPrice = roundCurrency(parsePrice(product.price) * multiplier);
+    const selectedGrindKey = selectedGrind.replace(/\s+/g, "-").toLowerCase();
+    const unitPrice = roundCurrency(parsePrice(product.price));
 
     if (product.stock < quantity) {
       throw new Error(`${product.name} is out of stock for the selected quantity.`);
     }
 
+    const lineDescription = [product.shortDescription, selectedWeight, selectedGrind]
+      .filter(Boolean)
+      .join(" • ");
+
     return {
-      id: `${product.slug}-${selectedSize}-${selectedGrind}`,
+      id: `${product.id}-${selectedGrindKey}`,
       productId: product.id,
       slug: product.slug,
       name: product.name,
-      description:
-        item.description || `${product.shortDescription} • ${selectedSize} • ${selectedGrind}`,
+      description: item.description || lineDescription,
       price: unitPrice,
       unitPrice,
       image: item.image || product.image,
       quantity,
-      selectedSize,
+      weight: String(product.weight || selectedWeight || "").trim() || null,
+      selectedWeight: selectedWeight || null,
       selectedGrind,
       lineTotal: roundCurrency(unitPrice * quantity),
     };

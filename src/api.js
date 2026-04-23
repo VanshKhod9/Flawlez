@@ -5,6 +5,23 @@ const parsePrice = (value) => {
   return Number.isNaN(numeric) ? 0 : numeric;
 };
 
+const buildProductGallery = (product) => {
+  const seen = new Set();
+  const images = [product?.image, product?.secondaryImage];
+  const extras = Array.isArray(product?.gallery) ? product.gallery : [];
+
+  return [...images, ...extras]
+    .map((item) => String(item || "").trim())
+    .filter((item) => {
+      if (!item || seen.has(item)) {
+        return false;
+      }
+
+      seen.add(item);
+      return true;
+    });
+};
+
 const normalizeProduct = (product) => {
   const priceValue = Number(product?.price ?? 0);
 
@@ -15,10 +32,12 @@ const normalizeProduct = (product) => {
     description: product?.shortDescription || product?.description || "",
     shortDescription: product?.shortDescription || product?.description || "",
     longDescription: product?.longDescription || product?.description || "",
+    weight: String(product?.weight || "").trim(),
+    secondaryImage: String(product?.secondaryImage || "").trim(),
     priceValue,
     price: `₹${priceValue.toFixed(2)}`,
     notes: Array.isArray(product?.notes) ? product.notes : [],
-    gallery: Array.isArray(product?.gallery) ? product.gallery : [product?.image].filter(Boolean),
+    gallery: buildProductGallery(product),
     benefits: Array.isArray(product?.benefits) ? product.benefits : [],
     roast: product?.roast || "Medium",
     origin: product?.origin || "India & East Africa",

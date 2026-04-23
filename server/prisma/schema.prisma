@@ -94,8 +94,10 @@ model Product {
   name             String
   shortDescription String   @map("short_description")
   longDescription  String?  @map("long_description")
+  weight           String?
   price            Decimal  @db.Decimal(10, 2)
   image            String
+  secondaryImage   String?  @map("secondary_image")
   gallery          Json?
   benefits         Json?
   tag              String?

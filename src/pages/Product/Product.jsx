@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
@@ -15,14 +15,14 @@ const trustPoints = ["Secure payment", "Fresh roast dispatch", "Support from you
 export default function Product() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
+  const { cart, addToCart, updateQuantity, getItemKey } = useContext(CartContext);
   const { products, loading, refreshProducts } = useProducts();
   const [product, setProduct] = useState(null);
   const [productError, setProductError] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [size, setSize] = useState("250g");
   const [grind, setGrind] = useState("Whole Bean");
   const [activeImage, setActiveImage] = useState("");
+  const lastSelectionKeyRef = useRef("");
 
   const fallbackProduct = useMemo(
     () => products.find((item) => item.slug === id || String(item.id) === String(id)),
@@ -35,7 +35,6 @@ export default function Product() {
     const loadProduct = async () => {
       if (fallbackProduct) {
         setProduct(fallbackProduct);
-        return;
       }
 
       try {
@@ -63,11 +62,33 @@ export default function Product() {
 
   const currentProduct = product || fallbackProduct;
 
+  const currentProductId = currentProduct?.id ?? null;
+  const currentProductStock = Number(currentProduct?.stock ?? 0);
+  const grindKey = grind.replace(/\s+/g, "-").toLowerCase();
+  const cartItemKey = currentProductId ? `${currentProductId}-${grindKey}` : null;
+  const cartItem = cartItemKey ? cart.find((item) => getItemKey(item) === cartItemKey) || null : null;
+
   useEffect(() => {
     if (currentProduct) {
-      setActiveImage(currentProduct.gallery?.[0] || currentProduct.image);
+      setActiveImage(currentProduct.image);
     }
   }, [currentProduct]);
+
+  useEffect(() => {
+    if (!cartItemKey) {
+      lastSelectionKeyRef.current = "";
+      return;
+    }
+
+    if (lastSelectionKeyRef.current === cartItemKey) {
+      return;
+    }
+
+    lastSelectionKeyRef.current = cartItemKey;
+    const matchingItem = cart.find((item) => getItemKey(item) === cartItemKey);
+    const initialQuantity = Number(matchingItem?.quantity || 0);
+    setQuantity(initialQuantity > 0 ? initialQuantity : 1);
+  }, [cart, cartItemKey, getItemKey]);
 
   const parsePrice = (value) => {
     const numeric = Number.parseFloat(String(value).replace(/[^0-9.]/g, ""));
@@ -106,28 +127,51 @@ export default function Product() {
   }
 
   const base = parsePrice(currentProduct.priceValue ?? currentProduct.price);
-  const sizeMultiplier = size === "250g" ? 1 : size === "500g" ? 1.9 : 3.5;
-  const unitPrice = (base * sizeMultiplier).toFixed(2);
-  const total = (base * sizeMultiplier * quantity).toFixed(2);
+  const displayWeight = currentProduct.weight || "";
+  const unitPrice = base.toFixed(2);
   const gallery = currentProduct.gallery?.length ? currentProduct.gallery : [currentProduct.image];
   const isSoldOut = currentProduct.stock <= 0;
+  const productDescription = currentProduct.shortDescription || currentProduct.description;
+  const total = (base * quantity).toFixed(2);
 
-  const buildItem = () => ({
-    id: `${currentProduct.slug}-${size}-${grind}`,
+  const buildItem = (nextQuantity = quantity) => ({
+    id: cartItemKey,
     productId: currentProduct.id,
     slug: currentProduct.slug,
     name: currentProduct.name,
-    description: `${currentProduct.description} • ${size} • ${grind}`,
+    description: [productDescription, displayWeight, grind].filter(Boolean).join(" • "),
     price: `₹${unitPrice}`,
     image: activeImage || currentProduct.image,
-    quantity,
-    selectedSize: size,
+    quantity: nextQuantity,
+    weight: displayWeight || null,
+    selectedWeight: displayWeight || null,
     selectedGrind: grind,
     unitPrice,
   });
 
+  const clampQuantity = (value) => {
+    const stockLimit = Math.max(1, currentProductStock || 1);
+    return Math.min(stockLimit, Math.max(1, Number(value) || 1));
+  };
+
+  const syncQuantity = (nextValue) => {
+    const nextQuantity = clampQuantity(nextValue);
+    setQuantity(nextQuantity);
+  };
+
+  const syncCartItem = () => {
+    const nextQuantity = clampQuantity(quantity);
+
+    if (cartItem) {
+      updateQuantity(cartItemKey, nextQuantity);
+      return;
+    }
+
+    addToCart(buildItem(nextQuantity));
+  };
+
   const handleBuyNow = () => {
-    addToCart(buildItem());
+    syncCartItem();
     navigate("/checkout");
   };
 
@@ -140,11 +184,14 @@ export default function Product() {
       <div className="product-page">
         <div className="product-container">
           <div className="product-left">
-            <img src={activeImage || currentProduct.image} alt={currentProduct.name} className="product-hero" />
+            <div className="product-hero-frame">
+              <img src={activeImage || currentProduct.image} alt={currentProduct.name} className="product-hero" />
+            </div>
             <div className="product-gallery-strip">
               {gallery.map((image) => (
                 <button
                   key={image}
+                  type="button"
                   className={`gallery-thumb ${activeImage === image ? "active" : ""}`}
                   onClick={() => setActiveImage(image)}
                 >
@@ -165,6 +212,12 @@ export default function Product() {
             <span className="product-kicker">{currentProduct.tag || "Signature roast"}</span>
             <h1 className="product-title">{currentProduct.name}</h1>
             <p className="product-desc">{currentProduct.longDescription || currentProduct.description}</p>
+            {displayWeight ? (
+              <div className="product-pack-size">
+                <span>Pack size</span>
+                <strong>{displayWeight}</strong>
+              </div>
+            ) : null}
 
             <div className="product-trust">
               {trustPoints.map((point) => (
@@ -173,14 +226,6 @@ export default function Product() {
             </div>
 
             <div className="product-options">
-              <label>
-                Size
-                <select value={size} onChange={(event) => setSize(event.target.value)}>
-                  <option value="250g">250g</option>
-                  <option value="500g">500g</option>
-                  <option value="1kg">1kg</option>
-                </select>
-              </label>
               <label>
                 Grind
                 <select value={grind} onChange={(event) => setGrind(event.target.value)}>
@@ -193,16 +238,27 @@ export default function Product() {
               <label>
                 Quantity
                 <div className="qty-row">
-                  <button onClick={() => setQuantity((value) => Math.max(1, value - 1))} className="qty-btn">
+                  <button
+                    type="button"
+                    onClick={() => syncQuantity(quantity - 1)}
+                    className="qty-btn"
+                    disabled={quantity <= 1}
+                  >
                     -
                   </button>
                   <input
                     type="number"
                     min={1}
+                    max={Math.max(1, currentProductStock || 1)}
                     value={quantity}
-                    onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+                    onChange={(event) => syncQuantity(event.target.value)}
                   />
-                  <button onClick={() => setQuantity((value) => value + 1)} className="qty-btn">
+                  <button
+                    type="button"
+                    onClick={() => syncQuantity(quantity + 1)}
+                    className="qty-btn"
+                    disabled={quantity >= Math.max(1, currentProductStock || 1)}
+                  >
                     +
                   </button>
                 </div>
@@ -214,8 +270,8 @@ export default function Product() {
                 <span>Selected total</span>
                 <div className="product-price">₹{total}</div>
               </div>
-              <button className="buy-btn" onClick={() => addToCart(buildItem())} disabled={isSoldOut}>
-                {isSoldOut ? "Sold Out" : "Add to Cart"}
+              <button className="buy-btn" onClick={syncCartItem} disabled={isSoldOut}>
+                {isSoldOut ? "Sold Out" : cartItem ? "Update Cart" : "Add to Cart"}
               </button>
               <button className="secondary-btn" onClick={handleBuyNow} disabled={isSoldOut}>
                 Buy Now
@@ -235,8 +291,8 @@ export default function Product() {
             </div>
 
             <div className="product-meta">
+              {displayWeight ? <div className="meta-item">Pack: {displayWeight}</div> : null}
               <div className="meta-item">Roast: {currentProduct.roast}</div>
-              <div className="meta-item">Origin: {currentProduct.origin}</div>
               <div className="meta-item">Process: {currentProduct.process}</div>
             </div>
           </div>
@@ -247,8 +303,8 @@ export default function Product() {
             <strong>{currentProduct.name}</strong>
             <span>₹{total}</span>
           </div>
-          <button onClick={() => addToCart(buildItem())} disabled={isSoldOut}>
-            {isSoldOut ? "Sold Out" : "Add to Cart"}
+          <button onClick={syncCartItem} disabled={isSoldOut}>
+            {isSoldOut ? "Sold Out" : cartItem ? "Update Cart" : "Add to Cart"}
           </button>
         </div>
 

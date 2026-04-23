@@ -27,7 +27,9 @@ const productFormDefaults = {
   shortDescription: "",
   longDescription: "",
   priceValue: "",
+  weight: "250g",
   image: "",
+  secondaryImage: "",
   gallery: "",
   benefits: "",
   tag: "",
@@ -56,14 +58,51 @@ const couponFormDefaults = {
 const formatCurrency = (value) => `₹${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) => (value ? new Date(value).toLocaleString("en-IN") : "-");
 const MAX_PRODUCT_IMAGE_SIZE = 4 * 1024 * 1024;
+const PRODUCT_IMAGE_OUTPUT_SIZE = 1400;
 
-const readFileAsDataUrl = (file) =>
+const loadImageFromFile = (file) =>
   new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Unable to read the selected image."));
-    reader.readAsDataURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Unable to load the selected image."));
+    };
+
+    image.src = objectUrl;
   });
+
+const readFileAsSquareDataUrl = async (file) => {
+  const image = await loadImageFromFile(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = PRODUCT_IMAGE_OUTPUT_SIZE;
+  canvas.height = PRODUCT_IMAGE_OUTPUT_SIZE;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Unable to process the selected image.");
+  }
+
+  context.fillStyle = "#f3e6d6";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+
+  const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const x = (canvas.width - width) / 2;
+  const y = (canvas.height - height) / 2;
+
+  context.drawImage(image, x, y, width, height);
+  return canvas.toDataURL("image/jpeg", 0.92);
+};
 
 export default function Admin() {
   const token = localStorage.getItem("token");
@@ -128,6 +167,12 @@ export default function Admin() {
       return;
     }
 
+    const galleryImages = Array.isArray(product.gallery)
+      ? product.gallery.filter((item) => item && item !== product.image)
+      : [];
+    const secondaryImage = product.secondaryImage || galleryImages[0] || "";
+    const extraGallery = galleryImages.filter((item) => item !== secondaryImage);
+
     setSelectedProductId(product.id);
     setProductForm({
       slug: product.slug || "",
@@ -135,8 +180,10 @@ export default function Admin() {
       shortDescription: product.shortDescription || "",
       longDescription: product.longDescription || "",
       priceValue: product.priceValue || "",
+      weight: product.weight || "250g",
       image: product.image || "",
-      gallery: (product.gallery || []).join(", "),
+      secondaryImage,
+      gallery: extraGallery.join(", "),
       benefits: (product.benefits || []).join(", "),
       tag: product.tag || "",
       notes: (product.notes || []).join(", "),
@@ -204,12 +251,12 @@ export default function Admin() {
     }
 
     try {
-      const imageData = await readFileAsDataUrl(file);
+      const imageData = await readFileAsSquareDataUrl(file);
       setProductForm((current) => ({
         ...current,
         image: imageData,
       }));
-      setMessage("Image selected from your device. Save the product to publish it.");
+      setMessage("Primary image squared and selected from your device. Save the product to publish it.");
       setError("");
     } catch (err) {
       setError(err.message || "Unable to load the selected image.");
@@ -220,6 +267,42 @@ export default function Admin() {
     setProductForm((current) => ({
       ...current,
       image: "",
+    }));
+  };
+
+  const handleSecondaryImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+      setError("Image must be smaller than 4MB.");
+      return;
+    }
+
+    try {
+      const imageData = await readFileAsSquareDataUrl(file);
+      setProductForm((current) => ({
+        ...current,
+        secondaryImage: imageData,
+      }));
+      setMessage("Secondary image squared and selected from your device. Save the product to publish it.");
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to load the selected image.");
+    }
+  };
+
+  const clearSecondaryImage = () => {
+    setProductForm((current) => ({
+      ...current,
+      secondaryImage: "",
     }));
   };
 
@@ -359,7 +442,10 @@ export default function Admin() {
                       <img src={product.image} alt={product.name} loading="lazy" />
                       <div>
                         <strong>{product.name}</strong>
-                        <span>{product.price}</span>
+                        <span>
+                          {product.price}
+                          {product.weight ? ` • ${product.weight}` : ""}
+                        </span>
                         <small>{product.stock} in stock • {product.isActive ? "Live" : "Hidden"}</small>
                       </div>
                     </button>
@@ -403,10 +489,25 @@ export default function Admin() {
                     <input name="priceValue" type="number" min="1" step="0.01" value={productForm.priceValue} onChange={handleProductChange} required />
                   </label>
                   <label>
+                    Weight / pack size
+                    <input
+                      name="weight"
+                      value={productForm.weight}
+                      onChange={handleProductChange}
+                      placeholder="250g"
+                      required
+                    />
+                  </label>
+                  <label>
                     Stock
                     <input name="stock" type="number" min="0" value={productForm.stock} onChange={handleProductChange} required />
                   </label>
                 </div>
+
+                <p className="admin-helper-text">
+                  Every product defaults to `250g`, and you can change it here anytime for separate
+                  pack-size listings like `Sermon 500g`.
+                </p>
 
                 <label>
                   Primary image
@@ -429,7 +530,7 @@ export default function Admin() {
                       Remove image
                     </button>
                   ) : null}
-                  <small>Supports JPG, PNG, WEBP up to 4MB.</small>
+                  <small>Supports JPG, PNG, WEBP up to 4MB. Device uploads are auto-fitted into a square.</small>
                 </div>
 
                 {productForm.image ? (
@@ -438,10 +539,44 @@ export default function Admin() {
                   </div>
                 ) : null}
 
+                <label>
+                  Secondary image
+                  <input
+                    name="secondaryImage"
+                    value={productForm.secondaryImage}
+                    onChange={handleProductChange}
+                    placeholder="Paste secondary image URL or use the upload button below"
+                  />
+                </label>
+
+                <div className="admin-image-tools">
+                  <label className="admin-upload-btn">
+                    Choose secondary image
+                    <input type="file" accept="image/*" onChange={handleSecondaryImageUpload} />
+                  </label>
+                  {productForm.secondaryImage ? (
+                    <button type="button" className="ghost-submit" onClick={clearSecondaryImage}>
+                      Remove secondary image
+                    </button>
+                  ) : null}
+                  <small>Use this as the second image shown after opening the product. Device uploads are auto-squared.</small>
+                </div>
+
+                {productForm.secondaryImage ? (
+                  <div className="admin-image-preview">
+                    <img src={productForm.secondaryImage} alt="Secondary product preview" />
+                  </div>
+                ) : null}
+
                 <div className="admin-grid">
                   <label>
-                    Gallery
-                    <input name="gallery" value={productForm.gallery} onChange={handleProductChange} placeholder="/image1.png, /image2.png" />
+                    Additional gallery images
+                    <input
+                      name="gallery"
+                      value={productForm.gallery}
+                      onChange={handleProductChange}
+                      placeholder="/image3.png, /image4.png"
+                    />
                   </label>
                   <label>
                     Benefits

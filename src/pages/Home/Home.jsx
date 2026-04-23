@@ -37,6 +37,27 @@ export default function Home() {
   const { products, loading, error } = useProducts();
   const [filter, setFilter] = useState("all");
 
+  const buildCatalogCartItem = (product) => {
+    const weight = String(product.weight || "").trim();
+    const grind = "Whole Bean";
+    const grindKey = grind.replace(/\s+/g, "-").toLowerCase();
+
+    return {
+      id: `${product.id}-${grindKey}`,
+      productId: product.id,
+      slug: product.slug,
+      name: product.name,
+      description: [product.description, weight, grind].filter(Boolean).join(" • "),
+      price: product.price,
+      image: product.image,
+      quantity: 1,
+      weight: weight || null,
+      selectedWeight: weight || null,
+      selectedGrind: grind,
+      unitPrice: product.priceValue,
+    };
+  };
+
   const featuredProducts = useMemo(
     () => products.filter((product) => product.featured).slice(0, 3),
     [products]
@@ -191,19 +212,23 @@ export default function Home() {
                     </button>
                     <p className="product-desc">{product.description}</p>
                     <div className="product-meta-row">
-                      <span className="product-price">{product.price}</span>
+                      <div className="product-price-stack">
+                        <span className="product-price">{product.price}</span>
+                        {product.weight ? <span className="product-weight">{product.weight}</span> : null}
+                      </div>
                       <span className={`product-meta ${product.stock <= 5 ? "low-stock" : ""}`}>
                         {product.stock <= 0
                           ? "Sold out"
                           : product.stock <= 5
                             ? `${product.stock} left`
-                            : product.origin}
+                            : product.weight || "250g"}
                       </span>
                     </div>
                   </div>
 
                   {(() => {
-                    const productKey = getItemKey(product);
+                    const cartItem = buildCatalogCartItem(product);
+                    const productKey = getItemKey(cartItem);
                     const quantityInCart = productKey ? cartQuantities[productKey] || 0 : 0;
 
                     if (product.stock <= 0) {
@@ -238,7 +263,7 @@ export default function Home() {
                     }
 
                     return (
-                      <button className="add-btn" onClick={() => addToCart(product)}>
+                      <button className="add-btn" onClick={() => addToCart(cartItem)}>
                         Add to Cart
                       </button>
                     );
