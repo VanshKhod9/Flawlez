@@ -154,6 +154,16 @@ export async function completeLogin(username, accessToken) {
   return handleJsonResponse(res);
 }
 
+export async function googleAuthenticate(credential) {
+  const res = await fetch(`${API_URL}/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+
+  return handleJsonResponse(res);
+}
+
 export async function getProtected(token) {
   return authorizedJson(`${API_URL}/protected`, token, { method: "GET" });
 }

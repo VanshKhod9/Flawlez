@@ -8,6 +8,7 @@ export async function initializeTables() {
       ADD COLUMN IF NOT EXISTS first_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS last_name VARCHAR(255),
       ADD COLUMN IF NOT EXISTS email VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS google_id VARCHAR(255),
       ADD COLUMN IF NOT EXISTS phone VARCHAR(255),
       ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT false,
       ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false

@@ -13,6 +13,7 @@ model User {
   lastName   String?   @map("last_name")
   username   String    @unique
   email      String?   @unique
+  googleId   String?   @unique @map("google_id")
   phone      String?   @unique
   password   String
   isVerified Boolean   @default(false) @map("is_verified")

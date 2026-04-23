@@ -7,6 +7,7 @@ import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
+import GoogleAuthButton from "../../component/GoogleAuthButton";
 import { CartContext } from "../../context/Cartcontext";
 import { useProducts } from "../../context/ProductContext";
 import "../Auth/Auth.css";
@@ -77,6 +78,11 @@ export default function Signup() {
     setStep(1);
   };
 
+  const handleGoogleSuccess = async (response) => {
+    setSessionFromToken(response.accessToken);
+    navigate(response.user?.isAdmin ? "/admin" : "/home");
+  };
+
   return (
     <>
       <Navbar />
@@ -122,61 +128,69 @@ export default function Signup() {
             </div>
 
             {step === 1 ? (
-              <form onSubmit={handleRegister} className="auth-form">
-                <label className="auth-label">
-                  Username
-                  <input
-                    type="text"
-                    className="auth-input"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    placeholder="Choose a username"
-                    required
-                    disabled={loading}
-                  />
-                </label>
+              <>
+                <GoogleAuthButton
+                  buttonText="continue_with"
+                  dividerLabel="or continue with"
+                  onAuthSuccess={handleGoogleSuccess}
+                />
 
-                <label className="auth-label">
-                  Phone Number
-                  <div className="auth-phone-group">
-                    <span className="auth-phone-prefix">+91</span>
+                <form onSubmit={handleRegister} className="auth-form">
+                  <label className="auth-label">
+                    Username
                     <input
-                      type="tel"
-                      className="auth-input auth-phone-input"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      placeholder="Enter 10-digit mobile number"
-                      inputMode="numeric"
-                      pattern="[0-9]{10}"
+                      type="text"
+                      className="auth-input"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      placeholder="Choose a username"
                       required
                       disabled={loading}
                     />
-                  </div>
-                </label>
+                  </label>
 
-                <label className="auth-label">
-                  Password
-                  <input
-                    type="password"
-                    className="auth-input"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Create a strong password"
-                    required
-                    disabled={loading}
-                  />
-                </label>
+                  <label className="auth-label">
+                    Phone Number
+                    <div className="auth-phone-group">
+                      <span className="auth-phone-prefix">+91</span>
+                      <input
+                        type="tel"
+                        className="auth-input auth-phone-input"
+                        value={phone}
+                        onChange={handlePhoneChange}
+                        placeholder="Enter 10-digit mobile number"
+                        inputMode="numeric"
+                        pattern="[0-9]{10}"
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                  </label>
 
-                {message ? <p className="auth-message error">{message}</p> : null}
+                  <label className="auth-label">
+                    Password
+                    <input
+                      type="password"
+                      className="auth-input"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Create a strong password"
+                      required
+                      disabled={loading}
+                    />
+                  </label>
 
-                <button type="submit" className="auth-primary-btn" disabled={loading}>
-                  {loading ? "Creating..." : "Continue to OTP"}
-                </button>
+                  {message ? <p className="auth-message error">{message}</p> : null}
 
-                <p className="auth-link-row">
-                  Already have an account? <Link to="/login">Log in</Link>
-                </p>
-              </form>
+                  <button type="submit" className="auth-primary-btn" disabled={loading}>
+                    {loading ? "Creating..." : "Continue to OTP"}
+                  </button>
+
+                  <p className="auth-link-row">
+                    Already have an account? <Link to="/login">Log in</Link>
+                  </p>
+                </form>
+              </>
             ) : (
               <div className="auth-otp-panel">
                 <div className="auth-otp-copy">

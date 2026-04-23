@@ -9,6 +9,7 @@ import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import SubNavbar from "../../component/Subnavbar";
 import Footer from "../../component/Footer";
+import GoogleAuthButton from "../../component/GoogleAuthButton";
 import "../Auth/Auth.css";
 import "./Login.css";
 
@@ -64,6 +65,11 @@ export default function Login() {
     setStep(1);
   };
 
+  const handleGoogleSuccess = async (response) => {
+    setSessionFromToken(response.accessToken);
+    navigate(response.user?.isAdmin ? "/admin" : "/home");
+  };
+
   return (
     <>
       <Navbar />
@@ -109,43 +115,51 @@ export default function Login() {
             </div>
 
             {step === 1 ? (
-              <form onSubmit={handleLogin} className="auth-form">
-                <label className="auth-label">
-                  Username
-                  <input
-                    type="text"
-                    className="auth-input"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    placeholder="Enter your username"
-                    required
-                    disabled={loading}
-                  />
-                </label>
+              <>
+                <GoogleAuthButton
+                  buttonText="signin_with"
+                  dividerLabel="or continue with"
+                  onAuthSuccess={handleGoogleSuccess}
+                />
 
-                <label className="auth-label">
-                  Password
-                  <input
-                    type="password"
-                    className="auth-input"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    disabled={loading}
-                  />
-                </label>
+                <form onSubmit={handleLogin} className="auth-form">
+                  <label className="auth-label">
+                    Username
+                    <input
+                      type="text"
+                      className="auth-input"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      placeholder="Enter your username"
+                      required
+                      disabled={loading}
+                    />
+                  </label>
 
-                {message ? <p className="auth-message error">{message}</p> : null}
+                  <label className="auth-label">
+                    Password
+                    <input
+                      type="password"
+                      className="auth-input"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Enter your password"
+                      required
+                      disabled={loading}
+                    />
+                  </label>
 
-                <button type="submit" className="auth-primary-btn" disabled={loading}>
-                  {loading ? "Checking..." : "Continue to OTP"}
-                </button>
+                  {message ? <p className="auth-message error">{message}</p> : null}
 
-                <p className="auth-link-row">
-                  New to Flawlez? <Link to="/signup">Create your account</Link>
-                </p>
-              </form>
+                  <button type="submit" className="auth-primary-btn" disabled={loading}>
+                    {loading ? "Checking..." : "Continue to OTP"}
+                  </button>
+
+                  <p className="auth-link-row">
+                    New to Flawlez? <Link to="/signup">Create your account</Link>
+                  </p>
+                </form>
+              </>
             ) : (
               <div className="auth-otp-panel">
                 <div className="auth-otp-copy">
