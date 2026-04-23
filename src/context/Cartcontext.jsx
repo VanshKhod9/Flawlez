@@ -5,6 +5,20 @@ import { getStoredSession, parseJwt } from "../utils/session";
 export const CartContext = createContext();
 
 const CART_STORAGE_KEY = "flawlez-cart";
+const LARGE_IMAGE_DATA_URL_PREFIX = "data:image/";
+
+const sanitizeCartForStorage = (cartItems, { stripAllImages = false } = {}) => {
+  return cartItems.map((item) => {
+    const image = typeof item?.image === "string" ? item.image.trim() : "";
+    const shouldStripImage =
+      stripAllImages || (image && image.startsWith(LARGE_IMAGE_DATA_URL_PREFIX));
+
+    return {
+      ...item,
+      image: shouldStripImage ? "" : image,
+    };
+  });
+};
 
 export const CartProvider = ({ children }) => {
   const initialSession = typeof window !== "undefined" ? getStoredSession() : { token: null, user: null };
@@ -52,7 +66,18 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(sanitizeCartForStorage(cart)));
+    } catch (error) {
+      try {
+        localStorage.setItem(
+          CART_STORAGE_KEY,
+          JSON.stringify(sanitizeCartForStorage(cart, { stripAllImages: true }))
+        );
+      } catch {
+        console.error("Unable to persist cart to local storage.", error);
+      }
+    }
   }, [cart]);
 
   const addToCart = (product) => {

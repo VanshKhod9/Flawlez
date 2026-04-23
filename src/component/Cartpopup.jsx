@@ -16,6 +16,11 @@ export default function CartPopup() {
   } = useContext(CartContext);
   const navigate = useNavigate();
 
+  const getCartImage = (item) => {
+    const image = typeof item?.image === "string" ? item.image.trim() : "";
+    return image || "/Flawlez5.png";
+  };
+
   const parsePrice = (value) => {
     const numericPrice = parseFloat(String(value).replace(/[^0-9.]/g, ""));
     return Number.isNaN(numericPrice) ? 0 : numericPrice;
@@ -65,7 +70,7 @@ export default function CartPopup() {
           <div className="cart-items">
             {cartItems.map((item, index) => (
               <div className="cart-item" key={item.__key ?? `cart-item-${index}`}>
-                <img src={item.image} alt={item.name} loading="lazy" />
+                <img src={getCartImage(item)} alt={item.name} loading="lazy" />
                 <div>
                   <h4>{item.name}</h4>
 

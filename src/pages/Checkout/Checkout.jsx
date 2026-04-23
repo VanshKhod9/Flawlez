@@ -14,6 +14,7 @@ import Footer from "../../component/Footer";
 import "./Checkout.css";
 
 const FRONTEND_RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "";
+const FALLBACK_CART_IMAGE = "/Flawlez5.png";
 
 export default function Checkout() {
   const { cart, isLoggedIn } = useContext(CartContext);
@@ -39,6 +40,11 @@ export default function Checkout() {
     zipCode: "",
     country: "India",
   });
+
+  const getOrderItemImage = (item) => {
+    const image = typeof item?.image === "string" ? item.image.trim() : "";
+    return image || FALLBACK_CART_IMAGE;
+  };
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -394,7 +400,7 @@ export default function Checkout() {
             <div className="order-items">
               {cart.map((item, index) => (
                 <div key={`${item.id || item.slug}-${index}`} className="order-item">
-                  <img src={item.image} alt={item.name} loading="lazy" />
+                  <img src={getOrderItemImage(item)} alt={item.name} loading="lazy" />
                   <div className="order-item-details">
                     <h4>{item.name}</h4>
                     <p>
