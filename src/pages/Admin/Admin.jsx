@@ -55,6 +55,15 @@ const couponFormDefaults = {
 
 const formatCurrency = (value) => `₹${Number(value || 0).toFixed(2)}`;
 const formatDate = (value) => (value ? new Date(value).toLocaleString("en-IN") : "-");
+const MAX_PRODUCT_IMAGE_SIZE = 4 * 1024 * 1024;
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Unable to read the selected image."));
+    reader.readAsDataURL(file);
+  });
 
 export default function Admin() {
   const token = localStorage.getItem("token");
@@ -175,6 +184,42 @@ export default function Admin() {
     setCouponForm((current) => ({
       ...current,
       [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handlePrimaryImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+      setError("Image must be smaller than 4MB.");
+      return;
+    }
+
+    try {
+      const imageData = await readFileAsDataUrl(file);
+      setProductForm((current) => ({
+        ...current,
+        image: imageData,
+      }));
+      setMessage("Image selected from your device. Save the product to publish it.");
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to load the selected image.");
+    }
+  };
+
+  const clearPrimaryImage = () => {
+    setProductForm((current) => ({
+      ...current,
+      image: "",
     }));
   };
 
@@ -365,8 +410,33 @@ export default function Admin() {
 
                 <label>
                   Primary image
-                  <input name="image" value={productForm.image} onChange={handleProductChange} required />
+                  <input
+                    name="image"
+                    value={productForm.image}
+                    onChange={handleProductChange}
+                    placeholder="Paste image URL or use the upload button below"
+                    required
+                  />
                 </label>
+
+                <div className="admin-image-tools">
+                  <label className="admin-upload-btn">
+                    Choose image from device
+                    <input type="file" accept="image/*" onChange={handlePrimaryImageUpload} />
+                  </label>
+                  {productForm.image ? (
+                    <button type="button" className="ghost-submit" onClick={clearPrimaryImage}>
+                      Remove image
+                    </button>
+                  ) : null}
+                  <small>Supports JPG, PNG, WEBP up to 4MB.</small>
+                </div>
+
+                {productForm.image ? (
+                  <div className="admin-image-preview">
+                    <img src={productForm.image} alt="Product preview" />
+                  </div>
+                ) : null}
 
                 <div className="admin-grid">
                   <label>

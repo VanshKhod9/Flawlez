@@ -240,6 +240,56 @@
   resize: vertical;
 }
 
+.admin-image-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-upload-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px dashed rgba(45, 28, 20, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #241712;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  cursor: pointer;
+}
+
+.admin-upload-btn input {
+  display: none;
+}
+
+.admin-image-tools small {
+  color: rgba(36, 23, 18, 0.58);
+}
+
+.admin-image-preview {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  padding: 18px;
+  border: 1px solid rgba(45, 28, 20, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-image-preview img {
+  max-width: min(100%, 300px);
+  max-height: 240px;
+  border-radius: 18px;
+  object-fit: contain;
+  background: #f3e6d6;
+}
+
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -390,6 +440,11 @@
   .primary-submit {
     width: 100%;
     min-height: 46px;
+  }
+
+  .admin-image-tools {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .form-actions {
