@@ -7,7 +7,7 @@ const parsePrice = (value) => {
 
 const buildProductGallery = (product) => {
   const seen = new Set();
-  const images = [product?.image, product?.secondaryImage];
+  const images = [product?.image, product?.secondaryImage, product?.thirdImage];
   const extras = Array.isArray(product?.gallery) ? product.gallery : [];
 
   return [...images, ...extras]
@@ -34,6 +34,7 @@ const normalizeProduct = (product) => {
     longDescription: product?.longDescription || product?.description || "",
     weight: String(product?.weight || "").trim(),
     secondaryImage: String(product?.secondaryImage || "").trim(),
+    thirdImage: String(product?.thirdImage || "").trim(),
     priceValue,
     price: `₹${priceValue.toFixed(2)}`,
     notes: Array.isArray(product?.notes) ? product.notes : [],

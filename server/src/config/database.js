@@ -42,6 +42,7 @@ export async function initializeTables() {
         price DECIMAL(10, 2) NOT NULL,
         image TEXT NOT NULL,
         secondary_image TEXT,
+        third_image TEXT,
         gallery JSONB,
         benefits JSONB,
         tag VARCHAR(255),
@@ -80,6 +81,7 @@ export async function initializeTables() {
       ALTER TABLE products
       ADD COLUMN IF NOT EXISTS weight VARCHAR(255),
       ADD COLUMN IF NOT EXISTS secondary_image TEXT,
+      ADD COLUMN IF NOT EXISTS third_image TEXT,
       ADD COLUMN IF NOT EXISTS gallery JSONB,
       ADD COLUMN IF NOT EXISTS benefits JSONB,
       ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 50,

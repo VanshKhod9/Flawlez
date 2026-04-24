@@ -39,7 +39,7 @@ const normalizeTextArray = (value) => {
 
 const buildGallery = (product) => {
   const seen = new Set();
-  const images = [product.image, product.secondaryImage];
+  const images = [product.image, product.secondaryImage, product.thirdImage];
   const extras = Array.isArray(product.gallery) ? product.gallery : [];
 
   return [...images, ...extras]
@@ -59,6 +59,7 @@ const serializeProduct = (product) => ({
   price: Number(product.price),
   weight: String(product.weight || "").trim(),
   secondaryImage: String(product.secondaryImage || "").trim(),
+  thirdImage: String(product.thirdImage || "").trim(),
   notes: Array.isArray(product.notes) ? product.notes : [],
   gallery: buildGallery(product),
   benefits: Array.isArray(product.benefits) ? product.benefits : [],
@@ -70,8 +71,9 @@ const buildProductData = (payload) => {
   const price = Number(payload.price);
   const image = String(payload.image || "").trim();
   const secondaryImage = String(payload.secondaryImage || "").trim();
+  const thirdImage = String(payload.thirdImage || "").trim();
   const gallery = normalizeTextArray(payload.gallery).filter(
-    (item) => item !== image && item !== secondaryImage
+    (item) => item !== image && item !== secondaryImage && item !== thirdImage
   );
 
   return {
@@ -83,6 +85,7 @@ const buildProductData = (payload) => {
     price: Number.isFinite(price) ? price : 0,
     image,
     secondaryImage: secondaryImage || null,
+    thirdImage: thirdImage || null,
     gallery,
     benefits: normalizeTextArray(payload.benefits),
     tag: String(payload.tag || "").trim() || null,

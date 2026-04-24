@@ -99,6 +99,7 @@ model Product {
   price            Decimal  @db.Decimal(10, 2)
   image            String
   secondaryImage   String?  @map("secondary_image")
+  thirdImage       String?  @map("third_image")
   gallery          Json?
   benefits         Json?
   tag              String?

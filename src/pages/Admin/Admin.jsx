@@ -30,6 +30,7 @@ const productFormDefaults = {
   weight: "250g",
   image: "",
   secondaryImage: "",
+  thirdImage: "",
   gallery: "",
   benefits: "",
   tag: "",
@@ -171,7 +172,11 @@ export default function Admin() {
       ? product.gallery.filter((item) => item && item !== product.image)
       : [];
     const secondaryImage = product.secondaryImage || galleryImages[0] || "";
-    const extraGallery = galleryImages.filter((item) => item !== secondaryImage);
+    const thirdImage =
+      product.thirdImage || galleryImages.find((item) => item !== secondaryImage) || "";
+    const extraGallery = galleryImages.filter(
+      (item) => item !== secondaryImage && item !== thirdImage
+    );
 
     setSelectedProductId(product.id);
     setProductForm({
@@ -183,6 +188,7 @@ export default function Admin() {
       weight: product.weight || "250g",
       image: product.image || "",
       secondaryImage,
+      thirdImage,
       gallery: extraGallery.join(", "),
       benefits: (product.benefits || []).join(", "),
       tag: product.tag || "",
@@ -303,6 +309,42 @@ export default function Admin() {
     setProductForm((current) => ({
       ...current,
       secondaryImage: "",
+    }));
+  };
+
+  const handleThirdImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file.");
+      return;
+    }
+
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+      setError("Image must be smaller than 4MB.");
+      return;
+    }
+
+    try {
+      const imageData = await readFileAsSquareDataUrl(file);
+      setProductForm((current) => ({
+        ...current,
+        thirdImage: imageData,
+      }));
+      setMessage("Third image squared and selected from your device. Save the product to publish it.");
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to load the selected image.");
+    }
+  };
+
+  const clearThirdImage = () => {
+    setProductForm((current) => ({
+      ...current,
+      thirdImage: "",
     }));
   };
 
@@ -565,6 +607,35 @@ export default function Admin() {
                 {productForm.secondaryImage ? (
                   <div className="admin-image-preview">
                     <img src={productForm.secondaryImage} alt="Secondary product preview" />
+                  </div>
+                ) : null}
+
+                <label>
+                  Third image
+                  <input
+                    name="thirdImage"
+                    value={productForm.thirdImage}
+                    onChange={handleProductChange}
+                    placeholder="Paste third image URL or use the upload button below"
+                  />
+                </label>
+
+                <div className="admin-image-tools">
+                  <label className="admin-upload-btn">
+                    Choose third image
+                    <input type="file" accept="image/*" onChange={handleThirdImageUpload} />
+                  </label>
+                  {productForm.thirdImage ? (
+                    <button type="button" className="ghost-submit" onClick={clearThirdImage}>
+                      Remove third image
+                    </button>
+                  ) : null}
+                  <small>Use this as the third image shown after opening the product. Device uploads are auto-squared.</small>
+                </div>
+
+                {productForm.thirdImage ? (
+                  <div className="admin-image-preview">
+                    <img src={productForm.thirdImage} alt="Third product preview" />
                   </div>
                 ) : null}
 
