@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "./utils/ProtectedRoute";
+import ScrollToTop from "./utils/ScrollToTop";
 import { CartProvider } from "./context/Cartcontext";
 import { ProductProvider } from "./context/ProductContext";
 import EmailSubscriptionPopup from "./component/EmailSubscriptionPopup";
@@ -24,6 +25,7 @@ function App() {
       <ProductProvider>
         <EmailSubscriptionPopup />
         <Router>
+          <ScrollToTop />
           <Suspense fallback={<div style={{ padding: "32px" }}>Loading...</div>}>
             <Routes>
               <Route path="/" element={<Navigate to="/home" replace />} />
