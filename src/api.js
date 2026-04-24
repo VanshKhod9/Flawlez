@@ -164,6 +164,16 @@ export async function googleAuthenticate(credential) {
   return handleJsonResponse(res);
 }
 
+export async function submitBulkInquiry(payload) {
+  const res = await fetch(`${API_URL}/bulk-inquiry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  return handleJsonResponse(res);
+}
+
 export async function getProtected(token) {
   return authorizedJson(`${API_URL}/protected`, token, { method: "GET" });
 }

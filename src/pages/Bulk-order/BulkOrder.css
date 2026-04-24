@@ -384,6 +384,17 @@
   border: 1px solid rgba(76, 175, 80, 0.22);
 }
 
+.form-error {
+  margin: 0;
+  color: #9d2d2d;
+  font-weight: 600;
+  font-size: 0.98rem;
+  padding: 16px 18px;
+  background: rgba(193, 63, 63, 0.08);
+  border-radius: 14px;
+  border: 1px solid rgba(193, 63, 63, 0.22);
+}
+
 .bulk-cta {
   max-width: 1200px;
   margin: 120px auto;

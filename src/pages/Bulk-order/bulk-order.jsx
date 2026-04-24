@@ -4,6 +4,7 @@ import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
 import Footer from "../../component/Footer";
+import { submitBulkInquiry } from "../../api";
 import { useProducts } from "../../context/ProductContext";
 import "./BulkOrder.css";
 
@@ -44,20 +45,41 @@ export default function BulkOrder() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError("");
+    setSubmitted(false);
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await submitBulkInquiry(formData);
+      if (!response.success) {
+        setSubmitError(response.message || "Unable to send your request right now.");
+        return;
+      }
+
+      setFormData({
+        company: "",
+        contactPerson: "",
+        email: "",
+        phone: "",
+        orderType: "",
+        monthlyVolume: "",
+        message: "",
+      });
       setSubmitted(true);
-    }, 600);
+    } catch (error) {
+      setSubmitError(error.message || "Unable to send your request right now.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -213,6 +235,7 @@ export default function BulkOrder() {
             <button type="submit" className="bulk-submit-btn" disabled={isSubmitting}>
               {isSubmitting ? "Sending details..." : "Request a call back"}
             </button>
+            {submitError ? <p className="form-error">{submitError}</p> : null}
             {submitted && (
               <p className="form-success">
                 Thank you! We&apos;ll get back to you within one business day.

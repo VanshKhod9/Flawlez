@@ -6,6 +6,7 @@ import reviewRoutes from "./reviewRoutes.js";
 import productRoutes from "./productRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import couponRoutes from "./couponRoutes.js";
+import bulkRoutes from "./bulkRoutes.js";
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ router.use("/", accountRoutes);
 router.use("/", reviewRoutes);
 router.use("/", productRoutes);
 router.use("/", couponRoutes);
+router.use("/", bulkRoutes);
 router.use("/", adminRoutes);
 
 export default router;
