@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/Cartcontext";
+import AnimatedLogo from "./AnimatedLogo";
 import "./Navbar.css";
 
 export default function Navbar() {
@@ -23,7 +24,7 @@ export default function Navbar() {
   return (
     <nav className="navbar-container">
       <Link to="/home" className="navbar-logo" aria-label="Go to home">
-        <img src="/Flawlez5.png" alt="Flawlez Coffee" className="Login-logo" />
+        <AnimatedLogo />
       </Link>
 
       <div className="navbar-icons">
