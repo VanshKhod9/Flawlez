@@ -61,6 +61,10 @@ export default function Product() {
   }, [loading, products.length, refreshProducts]);
 
   const currentProduct = product || fallbackProduct;
+  const relatedProducts = useMemo(
+    () => products.filter((item) => item.slug !== currentProduct?.slug).slice(0, 3),
+    [currentProduct?.slug, products]
+  );
 
   const currentProductId = currentProduct?.id ?? null;
   const currentProductStock = Number(currentProduct?.stock ?? 0);
@@ -309,18 +313,33 @@ export default function Product() {
         </div>
 
         <div className="suggestions">
-          <h3>You may also like</h3>
+          <div className="suggestions-head">
+            <span className="suggestions-kicker">More To Brew</span>
+            <h3>You may also like</h3>
+            <p>Explore a few more roasts from the current lineup without losing the same premium feel.</p>
+          </div>
           <div className="suggest-grid">
-            {products
-              .filter((item) => item.slug !== currentProduct.slug)
-              .slice(0, 3)
-              .map((item) => (
-                <div key={item.id || item.slug} className="suggest-card" onClick={() => navigate(`/product/${item.slug}`)}>
+            {relatedProducts.map((item) => (
+              <button
+                key={item.id || item.slug}
+                type="button"
+                className="suggest-card"
+                onClick={() => navigate(`/product/${item.slug}`)}
+              >
+                <div className="suggest-image-wrap">
                   <img src={item.image} alt={item.name} loading="lazy" />
-                  <div className="suggest-name">{item.name}</div>
-                  <div className="suggest-price">{item.price}</div>
                 </div>
-              ))}
+                <div className="suggest-copy">
+                  {item.tag ? <span className="suggest-tag">{item.tag}</span> : null}
+                  <div className="suggest-name">{item.name}</div>
+                  <p className="suggest-description">{item.shortDescription || item.description}</p>
+                  <div className="suggest-meta">
+                    <span className="suggest-price">{item.price}</span>
+                    {item.weight ? <span className="suggest-weight">{item.weight}</span> : null}
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       </div>

@@ -65,6 +65,21 @@ const serializeProduct = (product) => ({
   benefits: Array.isArray(product.benefits) ? product.benefits : [],
 });
 
+const serializeProductSummary = (product) => ({
+  id: product.id,
+  slug: product.slug,
+  name: product.name,
+  shortDescription: product.shortDescription,
+  price: Number(product.price),
+  image: product.image,
+  weight: String(product.weight || "").trim(),
+  tag: product.tag || null,
+  roast: product.roast || null,
+  stock: product.stock,
+  featured: Boolean(product.featured),
+  isActive: product.isActive !== false,
+});
+
 const buildProductData = (payload) => {
   const weight = String(payload.weight || "250g").trim();
   const slug = slugify(payload.slug || [payload.name, weight].filter(Boolean).join(" "));
@@ -122,7 +137,7 @@ export const listProducts = async (_req, res) => {
       orderBy: [{ createdAt: "asc" }],
     });
 
-    res.json({ success: true, products: products.map(serializeProduct) });
+    res.json({ success: true, products: products.map(serializeProductSummary) });
   } catch (error) {
     console.error("List products error:", error);
     res.status(500).json({ message: "Server error", success: false });

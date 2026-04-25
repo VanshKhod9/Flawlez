@@ -13,12 +13,13 @@ export default function SearchOverlay({ products }) {
   const filtered = items.filter((p) => {
     const name = String(p.name || "").toLowerCase();
     const description = String(p.description || p.shortDescription || "").toLowerCase();
+    const roast = String(p.roast || "").toLowerCase();
     const matchesQuery = name.includes(query.toLowerCase()) || description.includes(query.toLowerCase());
     
     if (filter === "all") return matchesQuery;
     if (filter === "popular") return matchesQuery && p.tag === "MOST POPULAR";
     if (filter === "staff-pick") return matchesQuery && p.tag === "STAFF PICK";
-    if (filter === "medium") return matchesQuery && description.includes("medium roast");
+    if (filter === "medium") return matchesQuery && (description.includes("medium roast") || roast.includes("medium"));
     
     return matchesQuery;
   });
