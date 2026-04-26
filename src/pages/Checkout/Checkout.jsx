@@ -63,13 +63,20 @@ export default function Checkout() {
         if (!token) return;
 
         const accountData = await getAccount(token);
+        const accountEmail = accountData.user?.email || accountData.user?.username || "";
+
+        setFormData((current) => ({
+          ...current,
+          email: current.email || accountEmail,
+        }));
+
         if (accountData.addresses?.length) {
           const firstAddress = accountData.addresses[0];
           setSavedAddresses(accountData.addresses);
           setSelectedAddressId(firstAddress.id);
           setFormData({
             fullName: firstAddress.full_name || "",
-            email: accountData.user?.email || accountData.user?.username || "",
+            email: accountEmail,
             mobileNumber: firstAddress.phone || "",
             address: firstAddress.line1 || "",
             city: firstAddress.city || "",

@@ -13,6 +13,16 @@ import { useProducts } from "../../context/ProductContext";
 import "../Auth/Auth.css";
 import "./Signup.css";
 
+const PASSWORD_REQUIREMENTS_MESSAGE =
+  "Use 8+ characters with uppercase, lowercase, a number, and a special character.";
+
+const passwordMeetsRequirements = (value) =>
+  value.length >= 8 &&
+  /[A-Z]/.test(value) &&
+  /[a-z]/.test(value) &&
+  /\d/.test(value) &&
+  /[^A-Za-z0-9]/.test(value);
+
 export default function Signup() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +46,11 @@ export default function Signup() {
 
     if (phone.length !== 10) {
       setMessage("Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
+
+    if (!passwordMeetsRequirements(password)) {
+      setMessage(PASSWORD_REQUIREMENTS_MESSAGE);
       return;
     }
 
@@ -192,10 +207,11 @@ export default function Signup() {
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         placeholder="Create a strong password"
+                        minLength={8}
                         required
                         disabled={loading}
                       />
-                      <span className="auth-label-hint">Use at least 8 characters for stronger protection.</span>
+                      <span className="auth-label-hint">{PASSWORD_REQUIREMENTS_MESSAGE}</span>
                     </label>
 
                     {message ? <p className="auth-message error">{message}</p> : null}

@@ -28,6 +28,16 @@ const emptyAddress = {
   phone: "",
 };
 
+const PASSWORD_REQUIREMENTS_MESSAGE =
+  "Use 8+ characters with uppercase, lowercase, a number, and a special character.";
+
+const passwordMeetsRequirements = (value) =>
+  value.length >= 8 &&
+  /[A-Z]/.test(value) &&
+  /[a-z]/.test(value) &&
+  /\d/.test(value) &&
+  /[^A-Za-z0-9]/.test(value);
+
 export default function Account() {
   const { logout } = useContext(CartContext);
   const navigate = useNavigate();
@@ -195,6 +205,11 @@ export default function Account() {
       return;
     }
 
+    if (!passwordMeetsRequirements(passwordForm.newPassword)) {
+      setPasswordError(PASSWORD_REQUIREMENTS_MESSAGE);
+      return;
+    }
+
     try {
       const activeToken = localStorage.getItem("token");
       const response = await changePassword(activeToken, {
@@ -223,12 +238,43 @@ export default function Account() {
     }
   };
 
+  const formatStatus = (value) => String(value || "").replace(/_/g, " ");
+
+  const getItemTotal = (item) =>
+    formatCurrency(
+      (Number(item?.quantity) || 0) *
+        (Number(String(item?.price ?? "").replace(/[^0-9.]/g, "")) || 0)
+    );
+
   // ✅ Clean logout
   const handleLogout = () => {
     logout();
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  const user = account.user || {};
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() || user.username || "Flawlez Member";
+  const initials =
+    displayName
+      .split(/\s+/)
+      .map((part) => part?.[0]?.toUpperCase())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("") || "F";
+  const totalSpent = account.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+  const latestOrder = account.orders[0] || null;
+  const primaryAddress = account.addresses[0] || null;
+  const memberSince = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+        month: "short",
+        year: "numeric",
+      })
+    : "Recently joined";
+  const locationLabel = primaryAddress
+    ? [primaryAddress.city, primaryAddress.state].filter(Boolean).join(", ")
+    : "India";
 
   return (
     <>
@@ -243,89 +289,201 @@ export default function Account() {
         ) : error ? (
           <div className="account-error">{error}</div>
         ) : (
-          <>
-            <header className="account-header">
-              <div>
-                <h1>My Account</h1>
-                <span className="account-username">{account.user?.username}</span>
+          <div className="account-shell">
+            <header className="account-hero">
+              <div className="account-hero-copy">
+                <span className="account-kicker">Flawlez Account</span>
+                <h1>{displayName}</h1>
+                <p>
+                  Keep your orders, delivery details, and account security organized from one calm
+                  dashboard.
+                </p>
+
+                <div className="account-hero-meta">
+                  <span className="account-meta-pill">@{user.username}</span>
+                  {user.email ? <span className="account-meta-pill">{user.email}</span> : null}
+                  {user.phone ? <span className="account-meta-pill">{user.phone}</span> : null}
+                </div>
               </div>
-              <button className="account-logout" onClick={handleLogout}>
-                Log Out
-              </button>
+
+              <div className="account-hero-card">
+                <div className="account-avatar">{initials}</div>
+                <div className="account-hero-card-copy">
+                  <span className="account-card-label">Member since</span>
+                  <strong>{memberSince}</strong>
+                  <span>{user.isAdmin ? "Admin access enabled" : "Customer account active"}</span>
+                </div>
+                <div className="account-hero-actions">
+                  <button className="primary-btn" onClick={() => navigate("/home")}>
+                    Shop Coffee
+                  </button>
+                  <button className="account-logout" onClick={handleLogout}>
+                    Log Out
+                  </button>
+                </div>
+              </div>
             </header>
 
-            {/* ==== Orders ==== */}
+            <section className="account-stats">
+              <article className="account-stat-card">
+                <span className="account-stat-label">Total orders</span>
+                <strong>{account.orders.length}</strong>
+                <span>
+                  {latestOrder
+                    ? `Latest on ${new Date(latestOrder.created_at).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                      })}`
+                    : "No orders yet"}
+                </span>
+              </article>
+              <article className="account-stat-card">
+                <span className="account-stat-label">Total spent</span>
+                <strong>{formatCurrency(totalSpent)}</strong>
+                <span>Across every Flawlez purchase so far</span>
+              </article>
+              <article className="account-stat-card">
+                <span className="account-stat-label">Saved addresses</span>
+                <strong>{account.addresses.length}</strong>
+                <span>{primaryAddress ? locationLabel : "Add your primary delivery location"}</span>
+              </article>
+              <article className="account-stat-card">
+                <span className="account-stat-label">Current status</span>
+                <strong>{user.isAdmin ? "Admin" : "Active"}</strong>
+                <span>{latestOrder ? formatStatus(latestOrder.payment_status) : "Ready to shop"}</span>
+              </article>
+            </section>
+
             <section className="account-panels">
-              <div className="account-panel" id="order-history">
-                <h2>Order History</h2>
+              <div className="account-panel account-orders-panel" id="order-history">
+                <div className="account-panel-head">
+                  <div>
+                    <span className="account-section-kicker">Orders</span>
+                    <h2>Order History</h2>
+                    <p>Review past purchases, totals, and delivery progress.</p>
+                  </div>
+                </div>
+
                 {account.orders.length === 0 ? (
-                  <p className="account-empty">You haven't placed any orders yet.</p>
+                  <div className="account-empty-state">
+                    <p className="account-empty">You haven&apos;t placed any orders yet.</p>
+                    <button className="secondary-btn account-ghost-btn" onClick={() => navigate("/home")}>
+                      Explore coffees
+                    </button>
+                  </div>
                 ) : (
                   <div className="orders-list">
                     {account.orders.map((order) => (
-                      <div className="order-card" key={order.id}>
+                      <article className="order-card" key={order.id}>
                         <div className="order-card-header">
-                          <div>
+                          <div className="order-card-meta">
                             <span className="order-id">Order #{order.id}</span>
-                            <span className={`order-status status-${order.payment_status}`}>
-                              {order.payment_status.replace("_", " ")}
-                            </span>
+                            <div className="order-statuses">
+                              <span className={`order-status status-${order.payment_status}`}>
+                                {formatStatus(order.payment_status)}
+                              </span>
+                              {order.fulfillment_status ? (
+                                <span className="order-status order-status-secondary">
+                                  {formatStatus(order.fulfillment_status)}
+                                </span>
+                              ) : null}
+                            </div>
                           </div>
                           <span className="order-date">{formatDate(order.created_at)}</span>
                         </div>
-                        <div className="order-total">Total: {formatCurrency(order.total)}</div>
+
+                        <div className="order-card-summary">
+                          <div>
+                            <span className="order-summary-label">Total paid</span>
+                            <strong>{formatCurrency(order.total)}</strong>
+                          </div>
+                          <div>
+                            <span className="order-summary-label">Items</span>
+                            <strong>{order.items.length}</strong>
+                          </div>
+                        </div>
+
                         <div className="order-items">
                           {order.items.map((item, index) => (
                             <div className="order-item" key={`${order.id}-${index}`}>
-                              <span>{item.name}</span>
-                              <span>Qty: {item.quantity}</span>
-                              <span>
-                                {formatCurrency(
-                                  item.quantity *
-                                    (Number(String(item.price).replace(/[^0-9.]/g, "")) || 0)
-                                )}
-                              </span>
+                              <div>
+                                <span className="order-item-name">{item.name}</span>
+                                <span className="order-item-meta">
+                                  Qty {item.quantity}
+                                  {item.weight ? ` • ${item.weight}` : ""}
+                                </span>
+                              </div>
+                              <strong>{getItemTotal(item)}</strong>
                             </div>
                           ))}
                         </div>
-                      </div>
+                      </article>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* ==== Account Info ==== */}
-              <div className="account-panel" id="account-details">
-                <h2>Account Details</h2>
-                <div className="account-detail-block">
-                  <p className="account-detail-name">{account.user?.username}</p>
-                  <p>India</p>
+              <aside className="account-panel account-overview-panel" id="account-details">
+                <div className="account-panel-head">
+                  <div>
+                    <span className="account-section-kicker">Profile</span>
+                    <h2>Account Overview</h2>
+                    <p>Your identity, contact details, and shortcuts in one place.</p>
+                  </div>
                 </div>
 
-                <div className="account-links">
-                  <a href="#addresses">View Addresses ({account.addresses.length})</a>
-                  <a href="#password">Reset Password</a>
-                  <a href="mailto:subscriptions@coffeecollective.in">Manage Subscriptions</a>
-                  {account.user?.isAdmin ? (
-                    <button className="link-btn" onClick={() => navigate("/admin")}>
-                      Open Admin Dashboard
-                    </button>
-                  ) : null}
+                <div className="account-detail-grid">
+                  <div className="account-detail-card">
+                    <span className="account-detail-label">Username</span>
+                    <strong>{user.username}</strong>
+                  </div>
+                  <div className="account-detail-card">
+                    <span className="account-detail-label">Email</span>
+                    <strong>{user.email || "Add one via Google login later"}</strong>
+                  </div>
+                  <div className="account-detail-card">
+                    <span className="account-detail-label">Phone</span>
+                    <strong>{user.phone || "Not available"}</strong>
+                  </div>
+                  <div className="account-detail-card">
+                    <span className="account-detail-label">Primary region</span>
+                    <strong>{locationLabel}</strong>
+                  </div>
                 </div>
-              </div>
+
+                <div className="account-links-card">
+                  <span className="account-section-kicker">Quick actions</span>
+                  <div className="account-links">
+                    <a href="#addresses">Manage addresses ({account.addresses.length})</a>
+                    <a href="#password">Update password</a>
+                    <button className="link-btn" onClick={() => navigate("/home")}>
+                      Continue shopping
+                    </button>
+                    {user.isAdmin ? (
+                      <button className="link-btn" onClick={() => navigate("/admin")}>
+                        Open Admin Dashboard
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </aside>
             </section>
 
-            {/* ==== Addresses ==== */}
             <section className="account-grid" id="addresses">
               <div className="account-panel">
-                <div className="panel-header">
-                  <h3>{editingAddressId ? "Edit Address" : "Add Address"}</h3>
+                <div className="account-panel-head">
+                  <div>
+                    <span className="account-section-kicker">Delivery</span>
+                    <h3>{editingAddressId ? "Edit Address" : "Add Address"}</h3>
+                    <p>Keep checkout fast by saving complete address details here.</p>
+                  </div>
                   {editingAddressId && (
                     <button className="link-btn" onClick={resetAddressForm}>
                       Cancel edit
                     </button>
                   )}
                 </div>
+
                 <form className="address-form" onSubmit={handleAddressSubmit}>
                   <div className="form-row">
                     <label>
@@ -429,13 +587,20 @@ export default function Account() {
               </div>
 
               <div className="account-panel address-list">
-                <h3>Saved Addresses</h3>
+                <div className="account-panel-head">
+                  <div>
+                    <span className="account-section-kicker">Saved</span>
+                    <h3>Saved Addresses</h3>
+                    <p>Choose a preferred delivery address and update it anytime.</p>
+                  </div>
+                </div>
+
                 {account.addresses.length === 0 ? (
                   <p className="account-empty">No saved addresses yet.</p>
                 ) : (
                   <div className="address-cards">
                     {account.addresses.map((address) => (
-                      <div className="address-card" key={address.id}>
+                      <article className="address-card" key={address.id}>
                         <div className="address-card-header">
                           <span className="address-label">{address.label}</span>
                           <div className="address-actions">
@@ -455,37 +620,48 @@ export default function Account() {
                         </p>
                         <p>{address.country}</p>
                         {address.phone && <p>Phone: {address.phone}</p>}
-                      </div>
+                      </article>
                     ))}
                   </div>
                 )}
               </div>
             </section>
 
-            {/* ==== Password ==== */}
-            <section className="account-panel" id="password">
-              <h3>Reset Password</h3>
+            <section className="account-panel account-security-panel" id="password">
+              <div className="account-panel-head">
+                <div>
+                  <span className="account-section-kicker">Security</span>
+                  <h3>Reset Password</h3>
+                  <p>Keep your account protected with a strong password you can remember.</p>
+                </div>
+              </div>
+
               <form className="password-form" onSubmit={handlePasswordSubmit}>
-                <label>
-                  Current Password
-                  <input
-                    type="password"
-                    name="currentPassword"
-                    value={passwordForm.currentPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </label>
-                <label>
-                  New Password
-                  <input
-                    type="password"
-                    name="newPassword"
-                    value={passwordForm.newPassword}
-                    onChange={handlePasswordChange}
-                    required
-                  />
-                </label>
+                <div className="form-row">
+                  <label>
+                    Current Password
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      required
+                    />
+                  </label>
+                  <label>
+                    New Password
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      minLength={8}
+                      required
+                    />
+                    <span className="password-hint">{PASSWORD_REQUIREMENTS_MESSAGE}</span>
+                  </label>
+                </div>
+
                 <label>
                   Confirm New Password
                   <input
@@ -496,6 +672,7 @@ export default function Account() {
                     required
                   />
                 </label>
+
                 <button type="submit" className="primary-btn">
                   Update password
                 </button>
@@ -503,7 +680,7 @@ export default function Account() {
                 {passwordError && <p className="form-error">{passwordError}</p>}
               </form>
             </section>
-          </>
+          </div>
         )}
       </main>
       <Footer />

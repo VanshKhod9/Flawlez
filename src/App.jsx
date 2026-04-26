@@ -5,6 +5,7 @@ import ScrollToTop from "./utils/ScrollToTop";
 import { CartProvider } from "./context/Cartcontext";
 import { ProductProvider } from "./context/ProductContext";
 import EmailSubscriptionPopup from "./component/EmailSubscriptionPopup";
+import LoginPopup from "./component/LoginPopup";
 
 const Signup = lazy(() => import("./pages/Signup/Signup"));
 const Login = lazy(() => import("./pages/Login/Login"));
@@ -26,6 +27,7 @@ function App() {
         <EmailSubscriptionPopup />
         <Router>
           <ScrollToTop />
+          <LoginPopup />
           <Suspense fallback={<div style={{ padding: "32px" }}>Loading...</div>}>
             <Routes>
               <Route path="/" element={<Navigate to="/home" replace />} />

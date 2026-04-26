@@ -14,7 +14,7 @@ export default function LoginPopup() {
       <div className="login-popup">
         <button className="close-btn" onClick={() => setIsLoginPopupOpen(false)}>×</button>
         <h2>Login Required</h2>
-        <p>Please log in to add items to your cart</p>
+        <p>Please log in or create an account to continue with checkout and saved cart actions.</p>
         <div className="login-popup-buttons">
           <button 
             className="login-btn"

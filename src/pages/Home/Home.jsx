@@ -6,7 +6,6 @@ import Navbar from "../../component/Navbar";
 import SubNavbar from "../../component/Subnavbar";
 import CartPopup from "../../component/Cartpopup";
 import SearchOverlay from "../../component/Searchoverlay";
-import LoginPopup from "../../component/LoginPopup";
 import Footer from "../../component/Footer";
 import "./Home.css";
 
@@ -123,7 +122,6 @@ export default function Home() {
       <SubNavbar />
       <CartPopup />
       <SearchOverlay products={products} />
-      <LoginPopup />
 
       <main className="home-page">
         <section className="home-announcement">

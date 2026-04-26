@@ -1,5 +1,11 @@
 import jwt from "jsonwebtoken";
 
+export const PASSWORD_REQUIREMENTS_MESSAGE =
+  "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.";
+
+export const PASSWORD_REQUIREMENTS_HINT =
+  "Use 8+ characters with uppercase, lowercase, a number, and a special character.";
+
 const adminUsernames = () =>
   (process.env.ADMIN_USERNAMES || "")
     .split(",")
@@ -42,4 +48,16 @@ export const normalizePhone = (phone) => {
   }
 
   return `+${digits}`;
+};
+
+export const passwordMeetsRequirements = (password) => {
+  const value = String(password || "");
+
+  return (
+    value.length >= 8 &&
+    /[A-Z]/.test(value) &&
+    /[a-z]/.test(value) &&
+    /\d/.test(value) &&
+    /[^A-Za-z0-9]/.test(value)
+  );
 };

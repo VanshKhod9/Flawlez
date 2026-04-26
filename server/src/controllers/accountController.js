@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import prisma from "../config/prisma.js";
+import { passwordMeetsRequirements, PASSWORD_REQUIREMENTS_MESSAGE } from "../utils/auth.js";
 
 const requiredAddressFields = ["full_name", "line1", "city", "state", "postal_code", "country"];
 
@@ -155,9 +156,9 @@ export const changePassword = async (req, res) => {
     const username = req.user.username;
     const { currentPassword, newPassword } = req.body;
 
-    if (String(newPassword || "").trim().length < 8) {
+    if (!passwordMeetsRequirements(newPassword)) {
       return res.status(400).json({
-        message: "New password must be at least 8 characters long.",
+        message: PASSWORD_REQUIREMENTS_MESSAGE,
         success: false,
       });
     }

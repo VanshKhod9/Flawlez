@@ -3,7 +3,13 @@ import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
 import { OAuth2Client } from "google-auth-library";
 import prisma from "../config/prisma.js";
-import { isAdminUsername, issueAccessToken, normalizePhone } from "../utils/auth.js";
+import {
+  isAdminUsername,
+  issueAccessToken,
+  normalizePhone,
+  passwordMeetsRequirements,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+} from "../utils/auth.js";
 
 const MSG91_SERVER_CONFIG_ERROR =
   "Server OTP verification is not configured. Add MSG91_AUTH_KEY on the backend.";
@@ -13,6 +19,8 @@ const MSG91_SERVER_VERIFY_ERROR = "Unable to verify OTP with MSG91. Please try a
 const SERVER_AUTH_CONFIG_ERROR =
   "Server authentication is not configured. Add ACCESS_TOKEN_SECRET on the backend.";
 const DATABASE_UNAVAILABLE_ERROR = "Database is temporarily unavailable. Please try again.";
+const DATABASE_SCHEMA_ERROR =
+  "Database schema is out of date. Restart the backend or apply the latest Prisma schema changes.";
 const GOOGLE_SERVER_CONFIG_ERROR =
   "Google sign-in is not configured. Add GOOGLE_CLIENT_ID on the backend.";
 const GOOGLE_VERIFY_ERROR = "Unable to verify your Google account. Please try again.";
@@ -80,8 +88,6 @@ const verifyMsg91AccessToken = async (accessToken) => {
 
   return data;
 };
-
-const validatePassword = (password) => String(password || "").trim().length >= 8;
 
 const sanitizeUsername = (value) => {
   const cleaned = String(value || "")
@@ -193,6 +199,10 @@ const getAuthErrorResponse = (error) => {
     return { status: 503, message: DATABASE_UNAVAILABLE_ERROR };
   }
 
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+    return { status: 503, message: DATABASE_SCHEMA_ERROR };
+  }
+
   return { status: 500, message: "Server error" };
 };
 
@@ -207,9 +217,9 @@ export const register = async (req, res) => {
       .json({ message: "Username, password, and phone are required.", success: false });
   }
 
-  if (!validatePassword(password)) {
+  if (!passwordMeetsRequirements(password)) {
     return res.status(400).json({
-      message: "Password must be at least 8 characters long.",
+      message: PASSWORD_REQUIREMENTS_MESSAGE,
       success: false,
     });
   }
@@ -218,6 +228,12 @@ export const register = async (req, res) => {
     const existingUsers = await prisma.user.findMany({
       where: {
         OR: [{ username: trimmedUsername }, { phone: normalizedPhone }],
+      },
+      select: {
+        id: true,
+        username: true,
+        phone: true,
+        isVerified: true,
       },
     });
 
@@ -250,9 +266,9 @@ export const completeRegister = async (req, res) => {
     });
   }
 
-  if (!validatePassword(password)) {
+  if (!passwordMeetsRequirements(password)) {
     return res.status(400).json({
-      message: "Password must be at least 8 characters long.",
+      message: PASSWORD_REQUIREMENTS_MESSAGE,
       success: false,
     });
   }
@@ -266,6 +282,12 @@ export const completeRegister = async (req, res) => {
       const existingUsers = await tx.user.findMany({
         where: {
           OR: [{ username: trimmedUsername }, { phone: normalizedPhone }],
+        },
+        select: {
+          id: true,
+          username: true,
+          phone: true,
+          isVerified: true,
         },
       });
 
@@ -294,6 +316,10 @@ export const completeRegister = async (req, res) => {
           phone: normalizedPhone,
           isVerified: true,
           isAdmin: isAdminUsername(trimmedUsername),
+        },
+        select: {
+          username: true,
+          isAdmin: true,
         },
       });
     });
@@ -326,7 +352,15 @@ export const login = async (req, res) => {
   }
 
   try {
-    const user = await prisma.user.findUnique({ where: { username: trimmedUsername } });
+    const user = await prisma.user.findUnique({
+      where: { username: trimmedUsername },
+      select: {
+        username: true,
+        password: true,
+        phone: true,
+        isVerified: true,
+      },
+    });
 
     if (!user) {
       return res.status(404).json({ message: "User not found.", success: false });
@@ -368,6 +402,10 @@ export const completeLogin = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { username: trimmedUsername },
+      select: {
+        username: true,
+        isAdmin: true,
+      },
     });
 
     if (!user) {
@@ -380,6 +418,10 @@ export const completeLogin = async (req, res) => {
         : await prisma.user.update({
             where: { username: trimmedUsername },
             data: { isAdmin: isAdminUsername(trimmedUsername) },
+            select: {
+              username: true,
+              isAdmin: true,
+            },
           });
 
     res.json({

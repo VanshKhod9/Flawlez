@@ -22,6 +22,7 @@ export default function Product() {
   const [quantity, setQuantity] = useState(1);
   const [grind, setGrind] = useState("Whole Bean");
   const [activeImage, setActiveImage] = useState("");
+  const [pendingBuyNowKey, setPendingBuyNowKey] = useState("");
   const lastSelectionKeyRef = useRef("");
 
   const fallbackProduct = useMemo(
@@ -93,6 +94,20 @@ export default function Product() {
     const initialQuantity = Number(matchingItem?.quantity || 0);
     setQuantity(initialQuantity > 0 ? initialQuantity : 1);
   }, [cart, cartItemKey, getItemKey]);
+
+  useEffect(() => {
+    if (!pendingBuyNowKey) {
+      return;
+    }
+
+    const matchingItem = cart.find((item) => getItemKey(item) === pendingBuyNowKey);
+    if (!matchingItem) {
+      return;
+    }
+
+    setPendingBuyNowKey("");
+    navigate("/checkout");
+  }, [cart, getItemKey, navigate, pendingBuyNowKey]);
 
   const parsePrice = (value) => {
     const numeric = Number.parseFloat(String(value).replace(/[^0-9.]/g, ""));
@@ -175,8 +190,12 @@ export default function Product() {
   };
 
   const handleBuyNow = () => {
+    if (!cartItemKey) {
+      return;
+    }
+
+    setPendingBuyNowKey(cartItemKey);
     syncCartItem();
-    navigate("/checkout");
   };
 
   return (
